@@ -131,7 +131,6 @@ def drawGrid():
     """
     Draws the grid onto the screen and updates it.
     """
-    graphTurtle.clear()
     
     grid_x, grid_y, gridSmall_x, gridSmall_y = getBestGrid() # unpack grid
 
@@ -213,35 +212,126 @@ def drawGrid():
         graphTurtle.teleport(axisDraw_x-getGraphSize()[0]*0.017, axisDraw_y)
         graphTurtle.goto(    axisDraw_x+getGraphSize()[0]*0.017, axisDraw_y)
         graphTurtle.pensize(1)
-    
+
+def drawGraph():
+    """
+    Draws a full graph, including the plots, points, and polygons.
+    """
+    graphTurtle.clear()
+    drawGrid()
     graphScreen.update()
 
 def moveGraph(dx, dy):
     """
     Moves the graph by dx in the x direction and by dy in the y direction.
     """
+    # adjust bounds
     graphBounds["llx"] += dx
     graphBounds["urx"] += dx
     graphBounds["lly"] += dy
     graphBounds["ury"] += dy
     updateBounds()
 
+    drawGraph() # update graph.
+
+
 def scaleGraph(scale_x, scale_y):
     """
     Scales the graph by scale_x in the x direction and by scale_y in the y direction
     """
+    # adjust bounds
     graphBounds["llx"] *= scale_x
     graphBounds["urx"] *= scale_x
     graphBounds["lly"] *= scale_y
     graphBounds["ury"] *= scale_y
     updateBounds()
 
+    drawGraph() # update graph.
+
+#
+# GRAPH COMMANDS
+#
+
+def moveGraphCommand(args):
+    """
+    Moves the graph with the first and second argument.
+    """
+    arg_dx = float(args[0])
+    arg_dy = float(args[1])
+
+    moveGraph(arg_dx, arg_dy)
+
+def scaleGraphCommand(args):
+    """
+    Scales the graph by the first the first argument in both directions, or by the first argument in the x direction and by the second argument in the y direction.
+    """
+
+    # this try-except block essentially checks if there really is a second argument, and applies the correct version of the command.
+    try:
+        argScale_x = float(args[0])
+        argScale_y = float(args[1])
+        scaleGraph(argScale_x, argScale_y)
+    except IndexError:
+        scaleGraph(argScale_x, argScale_x)
+
+
+def exitGraph():
+    """
+    Exits the program (destroys the main window).
+    """
+    window.destroy()
+
+def initialiseGraphCommand(args):
+    """
+    Initialises certain aspects of the graph. if the input has "s" in initialises scale, if the input has "c", it re-centers the graph, and if the input has "p", it initialises the plots.
+    """
+    global graphBounds
+    args_joined = "".join(args)
+    graphCenter_x = graphBounds["urx"]*0.5 + graphBounds["llx"]*0.5
+    graphCenter_y = graphBounds["ury"]*0.5 + graphBounds["lly"]*0.5
+    graphSize_x, graphSize_y = getGraphSize()
+
+    if "s" in args_joined:
+        graphBounds = {
+            "llx" : graphCenter_x-2,
+            "lly" : graphCenter_y-2,
+            "urx" : graphCenter_x+2,
+            "ury" : graphCenter_y+2
+        }
+        updateBounds()
+        graphSize_x, graphSize_y = 4, 4
+    
+    if "c" in args_joined:
+        graphBounds = {
+            "llx" : -graphSize_x * 0.5,
+            "lly" : -graphSize_y * 0.5,
+            "urx" :  graphSize_x * 0.5,
+            "ury" :  graphSize_y * 0.5
+        }
+        updateBounds()
+        graphCenter_x, graphCenter_y = 0, 0
+    
+    if "p" in args_joined:
+        plots = []
+    
+    drawGraph()
+
+
 #
 # RUNTIME (AND TESTING)
 #
 
 def enter_command(entry=None):
-    print(commandEntry.get())
+    """
+    Takes commands from the entry line and sends them to the correct graph command.
+    """
+    command = commandEntry.get().split()[0]
+    args = commandEntry.get().split()[1:]
+
+    if command == "move": moveGraphCommand(args)
+    if command == "scale": scaleGraphCommand(args)
+    if command == "init": initialiseGraphCommand(args)
+    if command == "exit": exitGraph()
     commandEntry.delete(0, tk.END)
 window.bind("<Return>", enter_command)
 
