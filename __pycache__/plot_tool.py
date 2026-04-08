@@ -213,12 +213,66 @@ def drawGrid():
         graphTurtle.goto(    axisDraw_x+getGraphSize()[0]*0.017, axisDraw_y)
         graphTurtle.pensize(1)
 
+def evaluateType(plotText):
+    """
+    Evaluates the type of plot that the user has inputted. There are three types: function, point, list of points (polygon).
+
+    Returns:
+        tuple: (plotType, convertedPlot)
+    """
+
+    # Conditions for a plot being a function: has the form "f(*) = ...", and * is the character to evaluate. f can be another letter. it can also be of the form "y = *".
+    # Conditions for a plot being a point: has the form "(*,*)"
+    # Conditions for a plot being a list of points (polygon): has the form "[(*,*),(*,*)...]"
+
+    if plotText[1] == "(" and plotText[3] == ")":
+        functionInput = plotText[2]
+        functionValue = plotText[plotText.index("=")+1:].strip()
+        return ("lambda " + functionInput + " : " + functionValue, "function")
+    
+    if plotText[0] == "y":
+        functionValue = plotText[plotText.index("=")+1:].strip()
+        for c in functionValue:
+            if c in "abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXZ":
+                functionInput = c
+                break
+        
+        return ("lambda " + functionInput + " : " + functionValue, "function")
+    
+    if plotText[0] == "(" and plotText[-1] == ")":
+        return (plotText, "point")
+    
+    if plotText[0:2] == "[(" and plotText[-2:] == ")]":
+        return (plotText, "polygon")
+
+def drawPlotFunction(plot):
+    """
+    Draws the points of a plotted function.
+    """
+    loBound = graphBounds["llx"]
+    hiBound = graphBounds["urx"]
+    resolution = getGraphSize()[0]*0.01
+
+    f = eval(plot["equ"])
+    x = loBound
+    graphTurtle.pencolor(plot["col"])
+    graphTurtle.pensize(plot["size"])
+    graphTurtle.teleport(x, f(x))
+    while x < hiBound:
+        x += resolution
+        graphTurtle.goto(x, f(x))
+    
+    graphTurtle.pencolor("#000000")
+    graphTurtle.pensize(1)
+
+    graphScreen.update()
+
+
 def drawGraph():
     """
     Draws a full graph, including the plots, points, and polygons.
     """
     graphTurtle.clear()
-    drawGrid()
     graphScreen.update()
 
 def moveGraph(dx, dy):
@@ -314,6 +368,37 @@ def initialiseGraphCommand(args):
     if "p" in args_joined:
         plots = []
     
+    drawGraph()
+
+def addPlotCommand(args):
+    """
+    Inserts a plot into the graph. Takes in three arguments (at most): The plot, the colour, and thickness.
+    """
+    plotType = evaluateType(args[0])
+    plotText = processType(args[0], plotType)
+    if len(args) == 1:
+        plot = {
+            "equ"  : plotText,
+            "type" : plotType,
+            "col"  : "#008000",
+            "size" : 1
+        }
+    if len(args) == 2:
+        plot = {
+            "equ"  : plotText,
+            "type" : plotType,
+            "col"  : args[1],
+            "size" : 1
+        }
+    if len(args) == 3:
+        plot = {
+            "equ"  : plotText,
+            "type" : plotType,
+            "col"  : "#"+args[1],
+            "size" : float(args[2])
+        }
+    
+    plots.append(plot)
     drawGraph()
 
 
