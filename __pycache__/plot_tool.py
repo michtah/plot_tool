@@ -36,6 +36,12 @@ def updateBounds():
     """
     graphScreen.setworldcoordinates(graphBounds["llx"], graphBounds["lly"], graphBounds["urx"], graphBounds["ury"])
 
+def isValidColor(col):
+    """
+    Returns true if the colour is valid. A valid colour is either a hex code, or a descriptor like "blue" or "cyan".
+    """
+    return col[0] == "#" or col in ["red","orange","yellow","green","lime","cyan","blue","black","gray","white","brown","pink","purple"]
+
 
 # defines the existing plots.
 #
@@ -232,18 +238,19 @@ def evaluateType(plotText):
     
     if plotText[0] == "y":
         functionValue = plotText[plotText.index("=")+1:].strip()
-        for c in functionValue:
-            if c in "abcdefghijklmnopqrstuvwxzABCDEFGHIJKLMNOPQRSTUVWXZ":
-                functionInput = c
-                break
-        
-        return ("lambda " + functionInput + " : " + functionValue, "function")
+        functionInput = "x"
+        return ("lambda x : " + functionValue, "function")
     
     if plotText[0] == "(" and plotText[-1] == ")":
         return (plotText, "point")
     
     if plotText[0:2] == "[(" and plotText[-2:] == ")]":
         return (plotText, "polygon")
+    
+    # default case, just pretend the variable is x.
+    functionInput = "x"
+    functionValue = plotText
+    return ("lambda x : " + functionValue, "function")
 
 def drawPlotFunction(plot):
     """
@@ -253,7 +260,7 @@ def drawPlotFunction(plot):
     hiBound = graphBounds["urx"]
     resolution = getGraphSize()[0]*0.01
 
-    f = eval(plot["equ"])
+    f = eval(plot["equ"], {**vars(m), "__builtins__": __builtins__})
     x = loBound
     graphTurtle.pencolor(plot["col"])
     graphTurtle.pensize(plot["size"])
@@ -268,11 +275,18 @@ def drawPlotFunction(plot):
     graphScreen.update()
 
 
+
 def drawGraph():
     """
     Draws a full graph, including the plots, points, and polygons.
     """
     graphTurtle.clear()
+
+    drawGrid()
+
+    for plot in plots:
+        if plot["type"] == "function": drawPlotFunction(plot)
+
     graphScreen.update()
 
 def moveGraph(dx, dy):
@@ -340,10 +354,14 @@ def initialiseGraphCommand(args):
     Initialises certain aspects of the graph. if the input has "s" in initialises scale, if the input has "c", it re-centers the graph, and if the input has "p", it initialises the plots.
     """
     global graphBounds
+    global plots
     args_joined = "".join(args)
     graphCenter_x = graphBounds["urx"]*0.5 + graphBounds["llx"]*0.5
     graphCenter_y = graphBounds["ury"]*0.5 + graphBounds["lly"]*0.5
     graphSize_x, graphSize_y = getGraphSize()
+
+    if args_joined == "":
+        args_joined = "scp"
 
     if "s" in args_joined:
         graphBounds = {
@@ -374,8 +392,9 @@ def addPlotCommand(args):
     """
     Inserts a plot into the graph. Takes in three arguments (at most): The plot, the colour, and thickness.
     """
-    plotType = evaluateType(args[0])
-    plotText = processType(args[0], plotType)
+    global plots
+    plotType = evaluateType(args[0])[1]
+    plotText = evaluateType(args[0])[0]
     if len(args) == 1:
         plot = {
             "equ"  : plotText,
@@ -394,12 +413,15 @@ def addPlotCommand(args):
         plot = {
             "equ"  : plotText,
             "type" : plotType,
-            "col"  : "#"+args[1],
+            "col"  : args[1],
             "size" : float(args[2])
         }
-    
-    plots.append(plot)
-    drawGraph()
+    try:
+        plots.append(plot)
+        drawGraph()
+    except:
+        plots.pop()  # remove the plot if drawing failed
+        return
 
 
 #
@@ -416,6 +438,7 @@ def enter_command(entry=None):
     if command == "move": moveGraphCommand(args)
     if command == "scale": scaleGraphCommand(args)
     if command == "init": initialiseGraphCommand(args)
+    if command == "plot": addPlotCommand(args)
     if command == "exit": exitGraph()
     commandEntry.delete(0, tk.END)
 window.bind("<Return>", enter_command)
