@@ -274,6 +274,10 @@ def drawPlotFunction(plot):
 
     graphScreen.update()
 
+def drawPlotPoint(plot):
+    """
+    Draws the points of a plotted point.
+    """
 
 
 def drawGraph():
@@ -281,6 +285,10 @@ def drawGraph():
     Draws a full graph, including the plots, points, and polygons.
     """
     graphTurtle.clear()
+
+    graphTurtle.pencolor(plot["col"])
+    graphTurtle.pensize(plot["size"])
+    
 
     drawGrid()
 
