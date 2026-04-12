@@ -21,6 +21,9 @@ graphBounds = {
     "ury" :  2
 }
 
+# defines the spatial resolution of the graph.
+graphResolution = 0.02
+
 def getGraphSize():
     """
     Returns the size of the graph's bounds.
@@ -54,10 +57,12 @@ plots = []
 # create window
 window = tk.Tk()
 window.geometry("1400x1000")
+window.grid_columnconfigure(1, weight=1)
+window.grid_rowconfigure(1, weight=1)
 
 # create canvas: the thing turtle will draw on
 graphCanvas = tk.Canvas(width=1000, height=1000)
-graphCanvas.place(x=0, y=0)
+graphCanvas.grid(row=0,column=0,rowspan=2)
 
 # create screen: the drawing surface of turtle.
 graphScreen = TurtleScreen(graphCanvas)
@@ -66,9 +71,23 @@ updateBounds()
 
 graphTurtle = RawTurtle(graphScreen, visible=False) # create invisible turtle.
 
-commandEntry = tk.Entry(window, width=400)
-commandEntry.place(x=1000, y=0)
+commandEntry = tk.Entry(window, width=50)
+commandEntry.grid(row=0,column=1, sticky="nsew", padx=5, pady=5)
 
+plotsListString = tk.StringVar(window)
+
+plotsList = tk.Label(window, textvariable=plotsListString, font=("Courier New", 10), wraplength=350, justify="left")
+plotsList.grid(row=1,column=1, sticky="nsew", padx=5, pady=5)
+
+def updatePlotList():
+    """
+    Updates the StringVar describing the plots in the graph.
+    """
+    global plotsListString
+    plotString = ""
+    for id, plot in enumerate(plots):
+        plotString += "ID: " + str(id) + " | Plot: " + plot["equ"] + "\n"
+    plotsListString.set(plotString)
 #
 # PLOTTING
 #
@@ -184,14 +203,14 @@ def drawGrid():
 
     # y-axis ticks
     for y in grid_y:
-        graphTurtle.teleport(axisDraw_y-getGraphSize()[0]*0.017, y)
-        graphTurtle.goto(    axisDraw_y+getGraphSize()[0]*0.017, y)
+        graphTurtle.teleport(axisDraw_x-getGraphSize()[0]*0.017, y)
+        graphTurtle.goto(    axisDraw_x+getGraphSize()[0]*0.017, y)
         graphTurtle.write(y)
 
     # small y-axis ticks
     for y in gridSmall_y:
-        graphTurtle.teleport(axisDraw_y-getGraphSize()[0]*0.007, y)
-        graphTurtle.goto(    axisDraw_y+getGraphSize()[0]*0.007, y)
+        graphTurtle.teleport(axisDraw_x-getGraphSize()[0]*0.007, y)
+        graphTurtle.goto(    axisDraw_x+getGraphSize()[0]*0.007, y)
 
     # x-axis
     graphTurtle.pencolor("#FF0000")
@@ -200,14 +219,14 @@ def drawGrid():
 
     # x-axis ticks
     for x in grid_x:
-        graphTurtle.teleport(x, axisDraw_x-getGraphSize()[1]*0.017)
-        graphTurtle.goto(    x, axisDraw_x+getGraphSize()[1]*0.017)
+        graphTurtle.teleport(x, axisDraw_y-getGraphSize()[1]*0.017)
+        graphTurtle.goto(    x, axisDraw_y+getGraphSize()[1]*0.017)
         graphTurtle.write(x)
 
     # small x-axis ticks
     for x in gridSmall_x:
-        graphTurtle.teleport(x, axisDraw_x-getGraphSize()[1]*0.007)
-        graphTurtle.goto(    x, axisDraw_x+getGraphSize()[1]*0.007)
+        graphTurtle.teleport(x, axisDraw_y-getGraphSize()[1]*0.007)
+        graphTurtle.goto(    x, axisDraw_y+getGraphSize()[1]*0.007)
 
     # draw centre of graph
     if centerExistsFlag:
@@ -231,22 +250,23 @@ def evaluateType(plotText):
     # Conditions for a plot being a point: has the form "(*,*)"
     # Conditions for a plot being a list of points (polygon): has the form "[(*,*),(*,*)...]"
 
-    if plotText[1] == "(" and plotText[3] == ")":
-        functionInput = plotText[2]
-        functionValue = plotText[plotText.index("=")+1:].strip()
-        return ("lambda " + functionInput + " : " + functionValue, "function")
-    
-    if plotText[0] == "y":
-        functionValue = plotText[plotText.index("=")+1:].strip()
-        functionInput = "x"
-        return ("lambda x : " + functionValue, "function")
-    
-    if plotText[0] == "(" and plotText[-1] == ")":
-        return (plotText, "point")
-    
-    if plotText[0:2] == "[(" and plotText[-2:] == ")]":
-        return (plotText, "polygon")
-    
+    if len(plotText) >= 3:
+        if plotText[0] == "y":
+            functionValue = plotText[plotText.index("=")+1:].strip()
+            functionInput = "x"
+            return ("lambda x : " + functionValue, "function")
+        
+        if plotText[0] == "(" and plotText[-1] == ")":
+            return (plotText, "point")
+        
+        if plotText[0:2] == "[(" and plotText[-2:] == ")]":
+            return (plotText, "polygon")
+        
+        if plotText[1] == "(" and plotText[3] == ")":
+            functionInput = plotText[2]
+            functionValue = plotText[plotText.index("=")+1:].strip()
+            return ("lambda " + functionInput + " : " + functionValue, "function")
+        
     # default case, just pretend the variable is x.
     functionInput = "x"
     functionValue = plotText
@@ -258,7 +278,7 @@ def drawPlotFunction(plot):
     """
     loBound = graphBounds["llx"]
     hiBound = graphBounds["urx"]
-    resolution = getGraphSize()[0]*0.01
+    resolution = getGraphSize()[0]*graphResolution
 
     f = eval(plot["equ"], {**vars(m), "__builtins__": __builtins__})
     x = loBound
@@ -267,7 +287,10 @@ def drawPlotFunction(plot):
     graphTurtle.teleport(x, f(x))
     while x < hiBound:
         x += resolution
-        graphTurtle.goto(x, f(x))
+        try:
+            graphTurtle.goto(x, f(x))
+        except:
+            graphTurtle.goto(x, 0)
     
     graphTurtle.pencolor("#000000")
     graphTurtle.pensize(1)
@@ -285,10 +308,6 @@ def drawGraph():
     Draws a full graph, including the plots, points, and polygons.
     """
     graphTurtle.clear()
-
-    graphTurtle.pencolor(plot["col"])
-    graphTurtle.pensize(plot["size"])
-    
 
     drawGrid()
 
@@ -394,6 +413,7 @@ def initialiseGraphCommand(args):
     if "p" in args_joined:
         plots = []
     
+    updatePlotList()
     drawGraph()
 
 def addPlotCommand(args):
@@ -424,14 +444,38 @@ def addPlotCommand(args):
             "col"  : args[1],
             "size" : float(args[2])
         }
+    
     try:
         plots.append(plot)
+        updatePlotList()
         drawGraph()
     except:
         plots.pop()  # remove the plot if drawing failed
+        updatePlotList()
         return
 
+def removePlotCommand(args):
+    """
+    Removes a plot based on its ID (its position in the plots list).
+    """
+    global plots
+    try:
+        plots.pop(int(args[0]))
+        updatePlotList()
+        drawGraph()
+    except:
+        return
 
+def setResolutionCommand(args):
+    """
+    Sets the graphResolution variable to a given value.
+    """
+    global graphResolution
+    try:
+        graphResolution = float(args[0])
+        drawGraph()
+    except:
+        return
 #
 # RUNTIME (AND TESTING)
 #
@@ -443,11 +487,13 @@ def enter_command(entry=None):
     command = commandEntry.get().split()[0]
     args = commandEntry.get().split()[1:]
 
-    if command == "move": moveGraphCommand(args)
-    if command == "scale": scaleGraphCommand(args)
-    if command == "init": initialiseGraphCommand(args)
-    if command == "plot": addPlotCommand(args)
-    if command == "exit": exitGraph()
+    if command in ["move","mv"]: moveGraphCommand(args)
+    if command in ["scale","sc"]: scaleGraphCommand(args)
+    if command in ["init","it"]: initialiseGraphCommand(args)
+    if command in ["plot","pt"]: addPlotCommand(args)
+    if command in ["exit","ex"]: exitGraph()
+    if command in ["remove","rm"]: removePlotCommand(args)
+    if command in ["setres","sr"]: setResolutionCommand(args)
     commandEntry.delete(0, tk.END)
 window.bind("<Return>", enter_command)
 
