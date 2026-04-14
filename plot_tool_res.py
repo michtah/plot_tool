@@ -36,15 +36,15 @@ graphResolution = 0.001
 #   - VISB: specifies if the current plot is visible.
 plots = []
 
-# ------------------------------------ #
-# DEFINITION HELPERS                   #
-# Functions to get and set definitions #
-# ------------------------------------ #
-
-# returns the graph's dimensions (x,y) as a tuple.
-def getGraphDimensions():
-    global graphBounds
-    return (graphBounds["urx"] - graphBounds["llx"], graphBounds["ury"] - graphBounds["lly"])
+# defines the safe dictionary of words the user is allowed to use
+# this is usual function in the math library, and some from the built in functions
+safe_dict = {name: getattr(m, name) for name in dir(m) if not name.startswith('_')}
+safe_dict["abs"] = abs
+safe_dict["pow"] = pow
+safe_dict["sum"] = sum
+safe_dict["round"] = round
+safe_dict["int"] = int
+safe_dict["range"] = range
 
 # ---------------------------------- #
 # GRAPHICS                           #
@@ -92,6 +92,22 @@ infoString = tk.StringVar(window, value="Graph Info:") # create string variable 
 infoLabel = tk.Label(window, textvariable=infoString, font=("Courier New", 9, "italic"), wraplength=350, justify="left", height=1, anchor="w") # create label that displays the plot information
 infoLabel.grid(row=3,column=1, padx=2, pady=5, sticky="ew") # place this label
 
+# ------------------------------------ #
+# DEFINITION HELPERS                   #
+# Functions to get and set definitions #
+# ------------------------------------ #
+
+# returns the graph's dimensions (x,y) as a tuple.
+def getGraphDimensions():
+    global graphBounds
+    return (graphBounds["urx"] - graphBounds["llx"], graphBounds["ury"] - graphBounds["lly"])
+
+# Updates the screen's world coordinates using graphBounds
+def updateBounds():
+    graphScreen.setworldcoordinates(graphBounds["llx"], graphBounds["lly"], graphBounds["urx"], graphBounds["ury"])
+
+
+
 # ---------------------------------------------------------- #
 # HELPERS                                                    #
 # Helper functions that aren't commands the user can access. #
@@ -127,9 +143,11 @@ def convertStringToPlot(string: str):
         string = "".join([i.strip() for i in string.split("=")])
         data = eval("lambda " + string[2] + " : " + string[4:])
     elif plotType == "FUNCTION2":
-        data = eval("lambda x : " + string.split("=")[1].strip())
+        data = eval("lambda x : " + string.split("=")[1].strip(), {"__builtins__": {}}, safe_dict)
     else:
-        data = eval("lambda x : " + string)
+        data = eval("lambda x : " + string, {"__builtins__": {}}, safe_dict)
+    
+    # do some tests to make sure the data is correct and functional
 
 # takes a colour string and corrects it based on what kind of input it is.
 def validateColour(colourString: str) -> str:
@@ -137,16 +155,12 @@ def validateColour(colourString: str) -> str:
     if colourString in ["red","orange","yellow","green","blue","purple","pink","magenta","cyan","brown","black","gray","white","teal","beige"]: return colourString
     
     # if it is a hexadecimal code with a hashtag, leave it alone.
-    # the sum here is a little confusing, so I'll explain:
-    #   the code is checking each character after the hashtag
-    #   and putting a one in the list if it is a valid hex symbol
-    #   (symbols 0-9, a-f both lower and upper case)
-    #   if all six character are valid this returns a six, which is what we want.
-    if colourString[0] == "#" and sum([1 for i in colourString[1:] if i in "0123456789ABCDEFabcdef"]) == 6 and len(colourString) == 7:
+    # the all function is a function that returns True only if all of its elements are True.
+    if colourString[0] == "#" and all([i in "0123456789abcdefABCDEF" for i in colourString[1:]]) and len(colourString) == 7:
         return colourString
 
     # if the colour is a hex code without a hashtag, add one.
-    if sum([1 for i in colourString if i in "0123456789abcdefABCDEF"]) == 6 and len(colourString) == 6:
+    if all([i in "0123456789abcdefABCDEF" for i in colourString]) and len(colourString) == 6:
         return "#" + colourString
 
     # if the input is an rgb input like "rgb(x, y, z)", convert it into hex.
@@ -158,8 +172,8 @@ def validateColour(colourString: str) -> str:
     if colourString[:4] == "rgb(" and colourString[-1] == ")" and colourString.count(",") == 2:
         return "#"+"".join([hex(256 + abs(int(i)%256))[3:] for i in colourString[4:-1].split(",")])
     
-    # if the input is ANYTHING ELSE, return the default colour #00A000.
-    return "#00A000"
+    # if the input is ANYTHING ELSE, raise an error
+    raise ValueError(colourString  + "is not a valid colour.")
 
 # takes plot string, colour, and size. generates the correctly formatted dictionary.
 def makePlotDictionary(plotString: str, plotColour: str, plotSize: int | float) -> dict:
