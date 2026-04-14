@@ -93,8 +93,9 @@ infoLabel = tk.Label(window, textvariable=infoString, font=("Courier New", 9, "i
 infoLabel.grid(row=3,column=1, padx=2, pady=5, sticky="ew") # place this label
 
 # ------------------------------------ #
-# DEFINITION HELPERS                   #
+# DEFINITION AND GUI HELPERS           #
 # Functions to get and set definitions #
+# Functions to modify the GUI          #
 # ------------------------------------ #
 
 # returns the graph's dimensions (x,y) as a tuple.
@@ -102,10 +103,34 @@ def getGraphDimensions():
     global graphBounds
     return (graphBounds["urx"] - graphBounds["llx"], graphBounds["ury"] - graphBounds["lly"])
 
+# returns the centre of the graph as a tuple.
+def getGraphCentre():
+    global graphBounds
+    return (graphBounds["urx"]*0.5 + graphBounds["llx"]*0.5, graphBounds["ury"]*0.5 + graphBounds["lly"]*0.5)
+
 # Updates the screen's world coordinates using graphBounds
 def updateBounds():
     graphScreen.setworldcoordinates(graphBounds["llx"], graphBounds["lly"], graphBounds["urx"], graphBounds["ury"])
 
+# changes the display of the errors label
+def displayError(error):
+    errorString.set(error)
+
+# changes the display of the graph info
+def displayInfo():
+    global plots
+    width, height = getGraphDimensions()
+    centre_x, centre_y = getGraphCentre()
+    numberOfPlots = len(plots)
+
+    infoString.set("Size  : " + formatNumber(width) + chr(ord("×")) + formatNumber(height) + " | Centre: " + formatNumber(centre_x) + ", " + formatNumber(centre_y) + " | Plots : " + str(numberOfPlots))
+
+# changes the display of the plot info
+def displayPlots():
+    displayStr = "Plots:"
+    for id, plot in enumerate(plots):
+        displayStr += "\nID: {:02d}".format(id) + " | [" + ("X" if plot["VISB"] else " ") + "] | " + plot["DISP"]
+    plotsString.set(displayStr)
 
 
 # ---------------------------------------------------------- #
@@ -148,6 +173,26 @@ def convertStringToPlot(string: str):
         data = eval("lambda x : " + string, {"__builtins__": {}}, safe_dict)
     
     # do some tests to make sure the data is correct and functional
+    # test for functions is to test their values out
+    if plotType in ["FUNCTION1", "FUNCTION2", "FUNCTION3"]:
+        try:
+            x = data(1)
+            x = data(-1)
+            x = data(7)
+        except ArithmeticError:
+            pass
+    
+    if plotType in ["LINE", "POLYGON"]:
+        x = data[0]
+        y = data[0][0]
+        z = data[0][1]
+    
+    if plotType == "POINT":
+        x = data[0]
+        y = data[1]
+
+    # if the program did all that without raising anything, our data is okay, return it
+    return data
 
 # takes a colour string and corrects it based on what kind of input it is.
 def validateColour(colourString: str) -> str:
@@ -176,22 +221,31 @@ def validateColour(colourString: str) -> str:
     raise ValueError(colourString  + "is not a valid colour.")
 
 # takes plot string, colour, and size. generates the correctly formatted dictionary.
-def makePlotDictionary(plotString: str, plotColour: str, plotSize: int | float) -> dict:
+def makePlotDictionary(plotString: str, plotColour: str = "#00A000", plotSize: int | float = 1) -> dict:
     return {
         "TYPE": getPlotType(plotString),
         "DATA": convertStringToPlot(plotString),
-        "DISP": plotsString,
+        "DISP": plotString,
         "COLR": validateColour(plotColour),
         "SIZE": plotSize,
         "VISB": True
     }
 
-
+# takes a number and formats it nicely
+def formatNumber(value: int | float) -> str:
+    if value == 0: return "0"
+    if abs(value) > 1e6 or abs(value) < 1e-2: return "{:.2e}".format(value).replace("+","")
+    else: return "{:.2f}".format(value)
 
 # ------------------------------------------------------------- #
 # USER COMMANDS AND INPUT                                       #
 # The commands the user can run as well as the parser for them. #
 # ------------------------------------------------------------- #
+
+"""
+A QUICK OVERVIEW OF USER COMMANDS:
+
+"""
 
 # ----------------------------------------- #
 # MAIN LOOP                                 #
