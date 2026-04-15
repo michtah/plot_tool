@@ -174,6 +174,8 @@ def convertStringToPlot(string: str):
     
     # do some tests to make sure the data is correct and functional
     # test for functions is to test their values out
+    # we ignore arithmetic issues because partial plots are no problem for the plotter
+    # parts of the plot can have undefined values
     if plotType in ["FUNCTION1", "FUNCTION2", "FUNCTION3"]:
         try:
             x = data(1)
@@ -237,19 +239,217 @@ def formatNumber(value: int | float) -> str:
     if abs(value) > 1e6 or abs(value) < 1e-2: return "{:.2e}".format(value).replace("+","")
     else: return "{:.2f}".format(value)
 
+# ------------------------------------- #
+# PLOTTING AND RENDERING                #
+# The tools that plot the actual graph. #
+# ------------------------------------- #
+
+# returns grid lines with good spacing based on the size of the grid.
+def getBestGrid():
+    # calculate ideal tick distance, which is 1/10th the size of the graph.
+    dx, dy = getGraphDimensions()[0] * 0.1, getGraphDimensions()[1] * 0.1
+
+    # this sub-function gets nicest value for a tick between 1 and 10
+    # this is scaled by powers of ten to get the whole range of valid numbers
+    def getNiceValue(x):
+        if x < 1.5: return 1
+        if x < 3.5: return 2
+        if x < 7.5: return 5
+        return 10
+    
+    # we use python's scientific notation formatting to extract the exponent and mantissa
+    mantissa_x, exponent_x = [float(i) for i in "{:.10e}".format(dx).split("e")]
+    mantissa_y, exponent_y = [float(i) for i in "{:.10e}".format(dy).split("e")]
+
+    # then, reconstruct the nice values for dx and dy using this information
+    nice_dx = 10**exponent_x * getNiceValue(mantissa_x)
+    nice_dy = 10**exponent_y * getNiceValue(mantissa_y)
+
+    # generate large grids
+    grid_x = [round(graphBounds["llx"]/nice_dx)*nice_dx + i*nice_dx for i in range(int((graphBounds["urx"]-graphBounds["llx"])/nice_dx)+1)]
+    grid_y = [round(graphBounds["lly"]/nice_dy)*nice_dy + i*nice_dy for i in range(int((graphBounds["ury"]-graphBounds["lly"])/nice_dy)+1)]
+
+    # generate small grids
+    gridSmall_x = [j for i in [[i + nice_dx*p for i in grid_x] for p in [0.2, 0.4, 0.6, 0.8]] for j in i]
+    gridSmall_y = [j for i in [[i + nice_dy*p for i in grid_y] for p in [0.2, 0.4, 0.6, 0.8]] for j in i]
+
+    # return as list of the grids with values that equal zero removed
+    return [[x for x in grid if x != 0] for grid in [grid_x, grid_y, gridSmall_x, gridSmall_y]]
+
+
+# draws the grid onto the screen
+def drawGrid():
+    """
+    Draws the grid onto the screen and updates it.
+    """
+    
+    grid_x, grid_y, gridSmall_x, gridSmall_y = getBestGrid() # unpack grid
+
+    # draw the small grid
+    graphTurtle.pencolor("#DDDDDD")
+    for x in gridSmall_x:
+        graphTurtle.teleport(x, graphBounds["lly"])
+        graphTurtle.goto(    x, graphBounds["ury"])
+    
+    for y in gridSmall_y:
+        graphTurtle.teleport(graphBounds["llx"], y)
+        graphTurtle.goto(    graphBounds["urx"], y)
+
+    # draw the regular grid
+    graphTurtle.pencolor("#AAAAAA")
+    for x in grid_x:
+        graphTurtle.teleport(x, graphBounds["lly"])
+        graphTurtle.goto(    x, graphBounds["ury"])
+    
+    for y in grid_y:
+        graphTurtle.teleport(graphBounds["llx"], y)
+        graphTurtle.goto(    graphBounds["urx"], y)
+
+    # draw the axes and the ticks
+    # if the axis is out of bounds, draw it on one of the edges instead.
+
+    axisDraw_x = min(max(0, graphBounds["llx"]), graphBounds["urx"])
+    axisDraw_y = min(max(0, graphBounds["lly"]), graphBounds["ury"])
+
+    # see if the centre is contained in the graph bounds. this will affect how we draw the graph.
+    centreExistsFlag = not(graphBounds["llx"] > 0 or graphBounds["urx"] < 0 or graphBounds["lly"] > 0 or graphBounds["ury"])
+
+    # y-axis
+    graphTurtle.pencolor("#0000FF")
+    graphTurtle.teleport(axisDraw_x, graphBounds["lly"])
+    graphTurtle.goto(    axisDraw_x, graphBounds["ury"])
+
+    # y-axis ticks
+    for y in grid_y:
+        graphTurtle.teleport(axisDraw_x-getGraphDimensions()[0]*0.017, y)
+        graphTurtle.goto(    axisDraw_x+getGraphDimensions()[0]*0.017, y)
+        graphTurtle.write(y)
+
+    # small y-axis ticks
+    for y in gridSmall_y:
+        graphTurtle.teleport(axisDraw_x-getGraphDimensions()[0]*0.007, y)
+        graphTurtle.goto(    axisDraw_x+getGraphDimensions()[0]*0.007, y)
+
+    # x-axis
+    graphTurtle.pencolor("#FF0000")
+    graphTurtle.teleport(graphBounds["llx"], axisDraw_y)
+    graphTurtle.goto(    graphBounds["urx"], axisDraw_y)
+
+    # x-axis ticks
+    for x in grid_x:
+        graphTurtle.teleport(x, axisDraw_y-getGraphDimensions()[1]*0.017)
+        graphTurtle.goto(    x, axisDraw_y+getGraphDimensions()[1]*0.017)
+        graphTurtle.write(x)
+
+    # small x-axis ticks
+    for x in gridSmall_x:
+        graphTurtle.teleport(x, axisDraw_y-getGraphDimensions()[1]*0.007)
+        graphTurtle.goto(    x, axisDraw_y+getGraphDimensions()[1]*0.007)
+
+    # draw centre of graph
+    if centreExistsFlag:
+        graphTurtle.pencolor("#000000")
+        graphTurtle.pensize(2)
+        graphTurtle.teleport(axisDraw_x, axisDraw_y-getGraphDimensions()[0]*0.017)
+        graphTurtle.goto(    axisDraw_x, axisDraw_y+getGraphDimensions()[0]*0.017)
+        graphTurtle.teleport(axisDraw_x-getGraphDimensions()[0]*0.017, axisDraw_y)
+        graphTurtle.goto(    axisDraw_x+getGraphDimensions()[0]*0.017, axisDraw_y)
+        graphTurtle.pensize(1)
+
+
+# draws a function plot
+def drawFunction(func: function, colour: str, size: float | int):
+    graphTurtle.pencolor(colour)
+    graphTurtle.pensize(size)
+    x = graphBounds["llx"] - graphResolution
+    try:
+        graphTurtle.teleport(x, func(x))
+    except ArithmeticError:
+        graphTurtle.teleport(x, 0)
+    
+    while x < graphBounds["urx"]:
+        x += graphResolution
+        try:
+            graphTurtle.goto(x, func(x))
+        except ArithmeticError:
+            graphTurtle.teleport(x, 0)
+    
+    graphTurtle.pencolor("#000000")
+    graphTurtle.pensize(1)
+
+
+# draws a point plot
+def drawPoint(point: tuple[float | int, float | int], colour: str, size: float | int):
+    graphTurtle.pencolor(colour)
+    graphTurtle.pensize(size)
+
+    graphTurtle.teleport(point[0] + graphResolution, point[1])
+    graphTurtle.goto(    point[0], point[1] + graphResolution)
+    graphTurtle.goto(    point[0] - graphResolution, point[1])
+    graphTurtle.goto(    point[0], point[1] - graphResolution)
+
+    graphTurtle.pencolor("#000000")
+    graphTurtle.pensize(1)
+
+
+# draws a line
+def drawLine(pointList: list[tuple], colour: str, size: float | int):
+    graphTurtle.pencolor(colour)
+    graphTurtle.pensize(size)
+
+    graphTurtle.teleport(pointList[0][0],pointList[0][1])
+    for point in pointList[1:]:
+        graphTurtle.goto(point[0],point[1])
+
+    graphTurtle.pencolor("#000000")
+    graphTurtle.pensize(1)
+
+
+# draws a polygon
+def drawPolygon(pointList: list[tuple], colour: str, size: float | int):
+    graphTurtle.pencolor(colour)
+    graphTurtle.pensize(size)
+
+    graphTurtle.teleport(pointList[0][0],pointList[0][1])
+    for point in pointList[1:]:
+        graphTurtle.goto(point[0],point[1])
+    
+    graphTurtle.goto(pointList[0][0],pointList[0][1])
+
+    graphTurtle.pencolor("#000000")
+    graphTurtle.pensize(1)
+
+# full rendering, including updating text
+def drawGraph():
+    global plots
+    drawGrid()
+    for plot in plots:
+        if not plot["VISB"]: continue
+        else:
+            if plot["TYPE"] in ["FUNCTION1", "FUNCTION2", "FUNCTION3"]:
+                drawFunction(plot["DATA"], plot["COLR"], plot["SIZE"])
+            elif plot["TYPE"] == "POINT":
+                drawPoint(plot["DATA"], plot["COLR"], plot["SIZE"])
+            elif plot["TYPE"] == "LINE":
+                drawLine(plot["DATA"], plot["COLR"], plot["SIZE"])
+            elif plot["TYPE"] == "POLYGON":
+                drawPolygon(plot["DATA"], plot["COLR"], plot["SIZE"])
+    
+    graphScreen.update()
+    displayInfo()
+    displayPlots()
+
+
 # ------------------------------------------------------------- #
 # USER COMMANDS AND INPUT                                       #
 # The commands the user can run as well as the parser for them. #
 # ------------------------------------------------------------- #
-
-"""
-A QUICK OVERVIEW OF USER COMMANDS:
-
-"""
 
 # ----------------------------------------- #
 # MAIN LOOP                                 #
 # Runs the actual program as the main loop. #
 # ----------------------------------------- #
 
+plots.append(makePlotDictionary("y = x**2", "red", 2))
+drawGraph()
 window.mainloop()
