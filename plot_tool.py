@@ -8,6 +8,8 @@
 import tkinter as tk
 from turtle import TurtleScreen, RawTurtle
 import math as m
+import os
+from copy import deepcopy
 
 # * ---------------------------------------------------------------- #
 # * DEFINITIONS                                                      #
@@ -92,6 +94,11 @@ load / ld
 list / ls
 undo / ud
 """
+
+# the history variable stores a list of dictionaries which keep deep copies of the plots and bounds variables
+# deep copies are necessary to make sure that the values are stores as they were, not as a reference, which would break the history
+# we initialise the history with the way it has always been
+history = [{"plots": [], "bounds": deepcopy(graphBounds)}]
 
 # * --------------------------------- #
 # * GRAPHICS                          #
@@ -865,7 +872,7 @@ def saveCommand(userParameters):
         filePTD.write(fileString)
 
 def loadCommand(userParameters):
-    global graphBounds, plots
+    global graphBounds, plots, history
     # adjust file name based on if it has an extension, and based on if it has its own custom path
     fileName = parseInput("File:s", userParameters)[0]
     if ".ptd" in fileName: fileName = fileName.split(".ptd")[0]
@@ -893,18 +900,42 @@ def loadCommand(userParameters):
         # swap current plots with previous plots
         plots = loadedPlots
 
+        # reset history
+        history = [{"plots": [], "bounds": deepcopy(graphBounds)}]
+
 def listCommand(userParameters):
-    return
+    global helpString
+    helpString = "Files in saves:\n" + "\n".join([fileName for fileName in os.listdir("saves/") if fileName.split(".",1)[1] == "ptd"])
 
 def undoCommand(userParameters):
-    return
+    global history, plots, graphBounds
+    args = parseInput(["", "Steps:i"], userParameters)
+    # if there is just one history entry, that cannot be removed
+    if len(history) == 1:
+        raise IndexError("History must have at least one step.")
+    # 1 is the default step size
+    if args == []:
+        step = 1
+    else:
+        step = args[0]
+    # if the step size is less than one, raise an error
+    if (step < 1): raise SyntaxError("You must go at least one step back in history.")
+
+    # if the value is fine, remove up to the step, then pop the current snap(shot) and assign the plots and graph bounds to the values present
+    history = history[step:]
+    snap = history.pop(0)
+    plots, graphBounds = snap["plots"], snap["bounds"]
+
+def clhistCommand(userParameters):
+    # reduce history to most recent
+    history = [history[0]]
 
 # parses user input and runs the appropriate command
 def runUserInput(userInput):
     userInput = commandEntry.get()
     userInput = userInput.split(" ", 1) # split into command and arguments string
     userCommand = userInput[0]
-
+    
     # get list of valid commands by turning the command list into a proper list
     validCommands = commandList.replace(" / ","\n").split("\n")
     
@@ -938,27 +969,38 @@ def runUserInput(userInput):
         "exit": exitCommand,             "quit": exitCommand,
         "load": loadCommand,             "ld": loadCommand,
         "save": saveCommand,             "sv": saveCommand,
-        "list": listCommand,             "ls": listCommand
+        "list": listCommand,             "ls": listCommand,
+        "undo": undoCommand,             "ud": undoCommand,
+        "clhist": clhistCommand,         "ch": clhistCommand
     }
     
+    # printing errors to the UI both if the command isn't in the list and if the command itself raises an exception
     if userCommand not in validCommands:
         displayError("Command is invalid. Type \"help\" to view a list of commands.")
     else:
-        try: commandKeywordPairs[userCommand](userParameters)
+        try:
+            commandKeywordPairs[userCommand](userParameters)
+            displayError("")
         except Exception as exc:
             if hasattr(exc, "message"): displayError(exc.message)
             else: displayError(exc)
+
+    # update history, and clip it to at most ten values for performance
+    # don't update it if the command was a help or list command, however
+    if userCommand not in ["help", "list", "ls"]:
+        global plots, graphBounds, history
+        history = [{"plots": deepcopy(plots), "bounds": deepcopy(graphBounds)}] + history
+        if len(history) > 10: history = history[:10]
         
     # update graph UI after running command
     drawGraph()
 
-    # if the command is a help or more command,
+    # if the command is a help or list command,
     # manually update the plot information section
     # using the help string that these functions set
-    if userCommand == "help":
+    if userCommand in ["help", "list", "ls"]:
         displayPlotsCustom(helpString)
 
-    
     # clear entry point
     commandEntry.delete(0, tk.END)
 # bind the enter key to run the user input

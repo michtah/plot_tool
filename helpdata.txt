@@ -192,7 +192,16 @@ ls
 undo
 $
 undo
+undo Steps
 $
-Undoes the previous instruction. To be more specific it loads the in-memory previous state.
+Undoes the previous instruction. To be more specific it loads the in-memory history. The Steps value is 1 if not provided, going one step back. Otherwise, it moves that many Steps back in history if possible.
 $
 ud
+#
+clhist
+$
+clhist
+$
+Clears the history to just the most recent value.
+$
+ch
