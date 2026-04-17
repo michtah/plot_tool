@@ -15,6 +15,13 @@ scale [kx] [ky] / scale [k]
     scales graph by kx in the x and ky in the y axis respectively. alternatively, scales both axes by k.
     can also take the shorthand "sc".
 
+setbounds [a] [~b] [~c] [~d]
+    sets the boundaries of the graph.
+    if there is one input, then the graph goes out to distance [a] in all directions.
+    if there are two inputs, then the graph goes out to distance [a] in the x axis, and [b] in the y axis.
+    if there are four inputs, then the function directly assigns it to the llx, lly, urx, and ury values directly.
+    can also take the shorthand "sb".
+
 colour [plot-id] [new-colour]
     changes the colour of the plot at id plot-id.
     can also take the shorthand "cl".

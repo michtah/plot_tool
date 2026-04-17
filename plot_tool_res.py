@@ -560,6 +560,10 @@ def scaleCommand(userParameters):
     graphBounds["ury"] = graphCen_y + graphDim_y * scale_y * 0.5
 
 
+def setboundsCommand(userParameters):
+    return
+
+
 def colourCommand(userParameters):
     global plots
     # check the number of arguments given
@@ -803,7 +807,7 @@ def runUserInput(userInput):
     userCommand = userInput[0]
 
     # list of valid commands
-    validCommands = ["plot", "pl", "move", "mv", "scale", "sc", "colour", "color", "cl", "size", "sz", "swap", "sw", "back", "bk", "front", "fr", "remove", "rm", "removeall", "ra", "resetpos", "rp", "resetscale", "rs", "resetgraph", "rg", "init", "ii", "setres", "sr", "help", "exit", "quit",  "toggle", "tg", "plotmany", "pm"]
+    validCommands = ["plot", "pl", "move", "mv", "scale", "sc", "colour", "color", "cl", "size", "sz", "swap", "sw", "back", "bk", "front", "fr", "remove", "rm", "removeall", "ra", "resetpos", "rp", "resetscale", "rs", "resetgraph", "rg", "init", "ii", "setres", "sr", "help", "exit", "quit",  "toggle", "tg", "plotmany", "pm", "setbounds", "sb"]
     
     # take the user input for the command. if it doesn't exist (some commands have no inputs after all), give a default blank string instead
     try:
@@ -817,6 +821,7 @@ def runUserInput(userInput):
         "plotmany": plotsCommand, "pm": plotsCommand,
         "move": moveCommand, "mv": moveCommand,
         "scale": scaleCommand, "sc": scaleCommand,
+        "setbounds": setboundsCommand, "sb": setboundsCommand,
         "colour": colourCommand, "color": colourCommand, "cl": colourCommand,
         "size": sizeCommand, "sz": sizeCommand,
         "swap": swapCommand, "sw": swapCommand,
