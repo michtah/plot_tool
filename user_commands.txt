@@ -86,5 +86,8 @@ help [~command]
     lists possible commands if no input is given.
     else, gives some information about a command.
 
+more [command]
+    gives a more detailed description of a command.
+
 exit / quit
     exits the program.
