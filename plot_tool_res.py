@@ -229,7 +229,7 @@ def convertStringToPlot(string: str):
             x = data(1)
             x = data(-1)
             x = data(7)
-        except ArithmeticError:
+        except ArithmeticError, ValueError, IndexError:
             pass
     
     if plotType in ["LINE", "POLYGON"]:
@@ -449,7 +449,7 @@ def drawGrid():
     axisDraw_y = min(max(0, graphBounds["lly"]), graphBounds["ury"])
 
     # see if the centre is contained in the graph bounds. this will affect how we draw the graph.
-    centreExistsFlag = not(graphBounds["llx"] > 0 or graphBounds["urx"] < 0 or graphBounds["lly"] > 0 or graphBounds["ury"])
+    centreExistsFlag = graphBounds["llx"] < 0 and graphBounds["urx"] > 0 and graphBounds["lly"] < 0 and graphBounds["ury"] > 0
 
     # y-axis
     graphTurtle.pencolor("#0000FF")
@@ -486,31 +486,66 @@ def drawGrid():
     # draw centre of graph
     if centreExistsFlag:
         graphTurtle.pencolor("#000000")
-        graphTurtle.pensize(2)
+        graphTurtle.pensize(3)
         graphTurtle.teleport(axisDraw_x, axisDraw_y-getGraphDimensions()[0]*0.017)
         graphTurtle.goto(    axisDraw_x, axisDraw_y+getGraphDimensions()[0]*0.017)
         graphTurtle.teleport(axisDraw_x-getGraphDimensions()[0]*0.017, axisDraw_y)
         graphTurtle.goto(    axisDraw_x+getGraphDimensions()[0]*0.017, axisDraw_y)
         graphTurtle.pensize(1)
 
+# evaluates a function, with an exception catching section that returns a string depending on the result
+def evalFunction(func, x):
+    try:
+        # regular result, can be anything, including complex values
+        result = func(x)
+
+        # if it is a complex number...
+        if isinstance(result, complex):
+            # ...if the complex part is small enough to be negligible, plot it anyways
+            if abs(result.complex) < 1e-9: result = result.real
+            # else return the error code CMX
+            else: result = "CMX"
+    except:
+        # if there's an exception, return the string INV
+        result = "INV"
+    
+    # return the evaluation
+    return result
+
 
 # draws a function plot
 def drawFunction(func: function, colour: str, size: float | int):
+    # set plot colour and size
     graphTurtle.pencolor(colour)
     graphTurtle.pensize(size)
+
+    # get initial value of x, which is just before the visible section
     x = graphBounds["llx"] - graphResolution
-    try:
-        graphTurtle.teleport(x, func(x))
-    except ArithmeticError, tk.TclError:
+
+    # calculate the value for this initial point
+    y = evalFunction(func, x)
+
+    # move to the start of the plot based on this value
+    if y == "INV" or y == "CMX":
         graphTurtle.teleport(x, 0)
+    else:
+        graphTurtle.teleport(x, y)
     
+    # for each point in the plot, evaluate the result
+    # if the result is invalid, lift the turtle pen
+    # this means invalid values aren't drawn
     while x < graphBounds["urx"]:
+        y = evalFunction(func, x)
+        if y == "INV" or y == "CMX":
+            graphTurtle.penup()
+        
+        else:
+            graphTurtle.goto(x, y)
+            graphTurtle.pendown()
+        
         x += graphResolution
-        try:
-            graphTurtle.goto(x, func(x))
-        except ArithmeticError:
-            graphTurtle.teleport(x, 0)
     
+    # set the colour and size back to default values
     graphTurtle.pencolor("#000000")
     graphTurtle.pensize(1)
 
