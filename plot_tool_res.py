@@ -738,15 +738,59 @@ def removeallCommand(userParameters):
 
 
 def resetposCommand(userParameters):
-    return
+    # find dimensions. the graph will keep the same size but reset the middle values ot zero.
+    graphDim_x, graphDim_y = getGraphDimensions()
+    graphBounds["llx"] = -0.5*graphDim_x
+    graphBounds["lly"] = -0.5*graphDim_y
+    graphBounds["urx"] =  0.5*graphDim_x
+    graphBounds["ury"] =  0.5*graphDim_y
+
+
 def resetscaleCommand(userParameters):
-    return
+    # find centre. the graph will keep the centre but reset the size to be 4x4.
+    graphCentre_x, graphCentre_y = getGraphCentre()
+    graphBounds["llx"] = 2 - graphCentre_x
+    graphBounds["lly"] = 2 - graphCentre_y
+    graphBounds["urx"] = 2 + graphCentre_x
+    graphBounds["ury"] = 2 + graphCentre_y
+
+
 def resetgraphCommand(userParameters):
-    return
+    # set it back to its initial value
+    global graphBounds
+    graphBounds = {
+        "llx" : -2,
+        "lly" : -2,
+        "urx" :  2,
+        "ury" :  2
+    }
+
 def initCommand(userParameters):
-    return
+    global graphBounds, plots
+    graphBounds = {
+        "llx" : -2,
+        "lly" : -2,
+        "urx" :  2,
+        "ury" :  2
+    }
+    plots = []
+
+
 def setresCommand(userParameters):
-    return
+    global graphResolution
+    # check if there's any values provided
+    if userParameters == "":
+        raise SyntaxError("Provide resolution.")
+    userParameters = userParameters.split(" ")
+    # check if the parameter is a numeric value
+    try:
+        newResolution = float(userParameters[0])
+    except ValueError:
+        raise ValueError("Resolution should be numeric value.")
+    
+    graphResolution = newResolution
+
+
 def helpCommand(userParameters):
     return
 def exitCommand(userParameters):
@@ -767,7 +811,7 @@ def runUserInput(userInput):
     except IndexError:
         userParameters = ""
 
-    # a dictionary with keyword-function pairs, associating the function with the appropriate keyword
+    # a dictionary with keyword-function pairs, associating the function with the appropriate keywords
     commandKeywordPairs = {
         "plot" : plotCommand, "pl": plotCommand,
         "plotmany": plotsCommand, "pm": plotsCommand,
