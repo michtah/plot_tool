@@ -47,8 +47,11 @@ safe_dict["sum"] = sum
 safe_dict["round"] = round
 safe_dict["int"] = int
 safe_dict["range"] = range
-
 safe_dict = {"__builtins__": {}, **safe_dict}
+
+# this is the help string
+# it holds the information that the help command and the more command display
+helpString = ""
 
 # * --------------------------------- #
 # * GRAPHICS                          #
@@ -263,7 +266,7 @@ def validIndex(*args):
 # these are separated by spaces
 # the name is the name of that specific input, 
 # and the type description afterwards tells the function 
-# what kind of input it should expect (for this program, float, int, or str)
+# what kind of input it should expect (for this program: float, int, plot id, or str)
 
 # it also raises appropriate errors if there are issues
 # * this function isn't used by the plotting functions as they have
@@ -291,6 +294,7 @@ def parseInput(inputTypesString: list[str] | str, userInput: str):
     # generate dictionary to convert between shorthand single letter types and long type names
     longTypeNames = {
         "i":"integer",
+        "d":"plot ID",
         "f":"real value",
         "s":"string"
     }
@@ -319,6 +323,10 @@ def parseInput(inputTypesString: list[str] | str, userInput: str):
             argCurrent = argUser
             if argType == "i":
                 argCurrent = int(argUser)
+            elif argType == "d":
+                argCurrent = int(argUser)
+                if not validIndex(argCurrent):
+                    raise IndexError(argName + " out of bounds.")
             elif argType == "f":
                 argCurrent = float(argUser)
             elif argType == "s":
@@ -626,10 +634,7 @@ def setboundsCommand(userParameters):
 
 def colourCommand(userParameters):
     global plots
-    plotIndex, plotColour = parseInput("ID:i Colour:s", userParameters)
-    
-    # validate index
-    if not validIndex(plotIndex): raise IndexError("Plot ID out of range")
+    plotIndex, plotColour = parseInput("ID:d Colour:s", userParameters)
     
     # change the colour of the plot with id plotIndex to the colour plotColour
     plots[plotIndex]["COLR"] = validateColour(plotColour)
@@ -637,10 +642,7 @@ def colourCommand(userParameters):
 
 def sizeCommand(userParameters):
     global plots
-    plotIndex, plotSize = parseInput("ID:i Size:f", userParameters)
-    
-    # validate index
-    if not validIndex(plotIndex): raise IndexError("Plot ID out of range")
+    plotIndex, plotSize = parseInput("ID:d Size:f", userParameters)
     
     # change thickness of the plot with id plotIndex to plotSize.
     plots[plotIndex]["SIZE"] = plotSize
@@ -648,20 +650,14 @@ def sizeCommand(userParameters):
 
 def swapCommand(userParameters):
     global plots
-    plotIndex_1, plotIndex_2 = parseInput("ID_1:i ID_2:i", userParameters)
-    
-    # validate indices
-    if not validIndex(plotIndex_1, plotIndex_2): raise IndexError("Swap out of range")
+    plotIndex_1, plotIndex_2 = parseInput("ID_1:d ID_2:d", userParameters)
 
     # swap the two plots
     plots[plotIndex_1], plots[plotIndex_2] = plots[plotIndex_2], plots[plotIndex_1]
 
 
 def toggleCommand(userParameters):
-    plotIndex = parseInput("ID:i", userParameters)[0]
-    
-    # validate index
-    if not validIndex(plotIndex): raise IndexError("ID out of range")
+    plotIndex = parseInput("ID:d", userParameters)[0]
 
     # set the visibility of the plot to false.
     plots[plotIndex]["VISB"] = not plots[plotIndex]["VISB"]
@@ -669,16 +665,14 @@ def toggleCommand(userParameters):
 
 def backCommand(userParameters):
     global plots
-    args = parseInput(["ID:i", "ID:i Back:i"], userParameters)
+    args = parseInput(["ID:d", "ID:d Back:i"], userParameters)
     if len(args) == 1: plotIndex, backAmount = args[0], 1
     else: plotIndex, backAmount = args
         
-    # validate index
-    if not validIndex(plotIndex): raise IndexError("Plot ID out of range")
-    # check if index is last. if it is raise the error anyways, but with a different message
+    # check if index is last already. if it is raise an error.
     if plotIndex == len(plots) - 1: raise IndexError("Plot is already last")
 
-    # clamp movement to range to not escape out of range
+    # clamp movement to not escape out of range
     backIndex = min(len(plots), plotIndex + backAmount + 1)
     
     plots = plots[:plotIndex] + plots[plotIndex+1:backIndex] + plots[plotIndex:plotIndex+1] + plots[backIndex:]
@@ -686,13 +680,11 @@ def backCommand(userParameters):
 
 def frontCommand(userParameters):
     global plots
-    args = parseInput(["ID:i", "ID:i Front:i"], userParameters)
+    args = parseInput(["ID:d", "ID:d Front:i"], userParameters)
     if len(args) == 1: plotIndex, frontAmount = args[0], 1
     else: plotIndex, frontAmount = args
         
-    # validate index
-    if not validIndex(plotIndex): raise IndexError("Plot ID out of range")
-    # check if index is first. if it is raise the error anyways, but with a different message
+    # check if index is first already. if it is raise an error.
     if plotIndex == 0: raise IndexError("Plot is already first")
 
     # clamp movement to range to not escape out of range
@@ -703,12 +695,9 @@ def frontCommand(userParameters):
 
 def removeCommand(userParameters):
     global plots
-    args = parseInput(["Remove:i", "Remove_start:i Remove_end:i"], userParameters)
+    args = parseInput(["Remove:d", "Remove_start:d Remove_end:d"], userParameters)
     if len(args) == 1: startIndex, endIndex = (args[0], args[0])
     else: startIndex, endIndex = args
-        
-    # validate indices
-    if not validIndex(startIndex, endIndex): raise IndexError("Remove out of range")
 
     plots = plots[:startIndex] + plots[endIndex+1:]
 
@@ -763,10 +752,14 @@ def setresCommand(userParameters):
     
     graphResolution = newResolution
 
+def exitCommand(userParameters):
+    window.destroy()
+    exit()
 
 def helpCommand(userParameters):
     return
-def exitCommand(userParameters):
+
+def moreCommand(userParameters):
     return
 
 # parses user input and runs the appropriate command
@@ -818,6 +811,13 @@ def runUserInput(userInput):
         
     # update graph UI after running command
     drawGraph()
+
+    # if the command is a help or more command,
+    # manually update the plot information section
+    # using the help string that these functions set
+    displayPlotsCustom(helpString)
+
+    
     # clear entry point
     commandEntry.delete(0, tk.END)
 # bind the enter key to run the user input
