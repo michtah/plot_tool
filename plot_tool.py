@@ -388,6 +388,82 @@ def parseInput(inputTypesString: list[str] | str, userInput: str):
     # if conversion is successful, return the list of outputs
     return outputList
 
+
+# * ------------------------------------------ #
+# * GROWTH RATE CALCULATION                    #
+# * Approximates the growth rate of a function #
+# * ------------------------------------------ #
+
+growthRateNames = [
+    "O(1)", "O(log(log(n)))", "O(log(n))", "O(sqrt(n))", "O(n)", "O(n*log(n))", "O(n*sqrt(n))", "O(n**2)", "O(n**3)", "O(2**n)", "O(n!)"
+]
+growthRateFunctions = [
+    lambda x: 1,
+    lambda x: m.log2(m.log2(x)),
+    lambda x: m.log2(x),
+    lambda x: m.sqrt(x),
+    lambda x: x,
+    lambda x: x*m.log2(x),
+    lambda x: x*m.sqrt(x),
+    lambda x: m.pow(x, 2),
+    lambda x: m.pow(x, 3),
+    lambda x: m.pow(2, x),
+    lambda x: m.gamma(x)
+]
+
+growthRates = [{"name": growthRateName, "function": growthRateFunction, "value": 0} for growthRateName, growthRateFunction in zip(growthRateNames, growthRateFunctions)]
+
+def getGrowthRate(func):
+    global growthRates
+    # since growth rates test asymptotic behaviour, it makes sense to test ever-higher values until our function reaches infinity
+    testValue = 10
+    for growthRate in growthRates:
+        try:
+                growthRate["value"] = growthRate["function"](testValue)
+        except OverflowError:
+            growthRate["value"] = m.inf
+    try:
+        testResult = float(func(testValue))
+    except OverflowError:
+        testResult = m.inf
+    
+    # if the function is already infinite, we're safe to assume we're dealing with a >O(n!)/O(gamma(n)) function
+    if m.isinf(testResult): return growthRates[-1]
+
+    # otherwise, do this same thing again and again until our test result becomes infinite or until our test value exceeds the cap of 1e200
+    while testValue < 1e200:
+        print(testValue)
+        for growthRate in growthRates:
+            try:
+                growthRate["value"] = growthRate["function"](testValue)
+            except OverflowError:
+                growthRate["value"] = m.inf
+        try:
+            testResult = float(func(testValue))
+        except OverflowError:
+            break
+        testValue *= 10
+    
+    # backtrack once, to make sure that our test result is finite if it was the first case that broke it
+    testValue *= 0.1
+    for growthRate in growthRates:
+        try:
+            growthRate["value"] = growthRate["function"](testValue)
+        except OverflowError:
+            growthRate["value"] = m.inf
+    testResult = func(testValue)
+
+    # now use a basic looping search to find the first point where it is less than the growth rate it's being compared against
+    growthRank = 0
+    for i in range(len(growthRates)):
+        if growthRates[i]["value"] >= testResult:
+            growthRank = i
+            break
+    
+    # return the growth rate type
+    return growthRates[growthRank]["name"]
+
+
 # * ------------------------------------ #
 # * PLOTTING AND RENDERING               #
 # * The tools that plot the actual graph #
@@ -930,6 +1006,9 @@ def clhistCommand(userParameters):
     # reduce history to most recent
     history = [history[0]]
 
+def bigoCommand(userParameters):
+    return
+
 # parses user input and runs the appropriate command
 def runUserInput(userInput):
     userInput = commandEntry.get()
@@ -971,7 +1050,8 @@ def runUserInput(userInput):
         "save": saveCommand,             "sv": saveCommand,
         "list": listCommand,             "ls": listCommand,
         "undo": undoCommand,             "ud": undoCommand,
-        "clhist": clhistCommand,         "ch": clhistCommand
+        "clhist": clhistCommand,         "ch": clhistCommand,
+        "bigo": bigoCommand,             "bo": bigoCommand
     }
     
     # printing errors to the UI both if the command isn't in the list and if the command itself raises an exception
@@ -1012,5 +1092,6 @@ window.bind("<Return>", runUserInput)
 # ! Runs the actual program as the main loop #
 # ! ---------------------------------------- #
 
+print(getGrowthRate(lambda x: x**(2.2)))
 drawGraph()
 window.mainloop()

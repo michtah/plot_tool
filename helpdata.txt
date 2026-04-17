@@ -205,3 +205,11 @@ $
 Clears the history to just the most recent value.
 $
 ch
+#
+bigo
+$
+bigo
+$
+Shows the estimated growth rate of all the functions.
+$
+bo
