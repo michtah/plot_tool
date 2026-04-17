@@ -3,6 +3,10 @@ plot [plot-string] ~colour ~size
     the colour and size values can take default values.
     can also take the shorthand "pl".
 
+plots [plots-string] ~colour ~size
+    plots many plots. these plots are separated by semicolons. the other aspects are the same.
+    can also take the shorthand "ps".
+
 move [dx] [dy]
     moves the centre of the graph by dx in the x direction and by dy in the y direction.
     can also take the shorthand "mv".
@@ -39,12 +43,12 @@ back [plot-id] [~amount]
     pushes the plot in plot-id back by amount, if it exists. otherwise by just one.
     can also take the shorthand "bk".
 
-front [plot-id]
+front [plot-id] [~amount]
     pushes the plot in plot-id forward one spot.
     can also take the shorthand "fr".
 
-remove [plot-id]
-    removes the plot at plot-id.
+remove [plot-id] / remove [begin-id] [end-id]
+    removes the plot at plot-id, or the plots between begin-id and end-id.
     can also take the shorthand "rm".
 
 removeall

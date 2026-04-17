@@ -586,17 +586,17 @@ def swapCommand(userParameters):
     global plots
     # check the number of arguments given
     if userParameters == "":
-        raise SyntaxError("Provide two indices")
+        raise SyntaxError("Provide two IDs")
     userParameters = userParameters.split(" ")
     if len(userParameters) == 1:
-        raise SyntaxError("Provide two indices")
+        raise SyntaxError("Provide two IDs")
     
     # convert the index input to the correct types and assign to variables
     try:
         plotIndex_1 = int(userParameters[0])
         plotIndex_2 = int(userParameters[1])
     except ValueError:
-        raise ValueError("Indices must be numeric values")
+        raise ValueError("IDs must be numeric values")
     
     # validate indices
     if not validIndex(plotIndex_1, plotIndex_2): raise IndexError("Plot ID out of range")
@@ -617,13 +617,14 @@ def toggleCommand(userParameters):
     try:
         plotIndex = int(userParameters[0])
     except ValueError:
-        raise ValueError("Index must be numeric value")
+        raise ValueError("ID must be numeric value")
     
     # validate index
     if not validIndex(plotIndex): raise IndexError("Plot ID out of range")
 
     # set the visibility of the plot to false.
     plots[plotIndex]["VISB"] = not plots[plotIndex]["VISB"]
+
 
 def backCommand(userParameters):
     global plots
@@ -636,13 +637,13 @@ def backCommand(userParameters):
             plotIndex = int(userParameters[0])
             backAmount = 1
         except ValueError:
-            raise ValueError("Index must be numeric value")
+            raise ValueError("ID must be numeric value")
     else:
         try:
             plotIndex = int(userParameters[0])
             backAmount = int(userParameters[1])
         except ValueError:
-            raise ValueError("Index and distance must be numeric values")
+            raise ValueError("ID and distance must be numeric values")
         
     # validate index
     if not validIndex(plotIndex): raise IndexError("Plot ID out of range")
@@ -652,6 +653,7 @@ def backCommand(userParameters):
     backIndex = min(len(plots), plotIndex + backAmount + 1)
     
     plots = plots[:plotIndex] + plots[plotIndex+1:backIndex] + plots[plotIndex:plotIndex+1] + plots[backIndex:]
+
 
 def frontCommand(userParameters):
     global plots
@@ -664,13 +666,13 @@ def frontCommand(userParameters):
             plotIndex = int(userParameters[0])
             frontAmount = 1
         except ValueError:
-            raise ValueError("Index must be numeric value")
+            raise ValueError("ID must be numeric value")
     else:
         try:
             plotIndex = int(userParameters[0])
             frontAmount = int(userParameters[1])
         except ValueError:
-            raise ValueError("Index and distance must be numeric values")
+            raise ValueError("ID and distance must be numeric values")
         
     # validate index
     if not validIndex(plotIndex): raise IndexError("Plot ID out of range")
@@ -680,10 +682,37 @@ def frontCommand(userParameters):
 
     plots = plots[:frontIndex] + plots[plotIndex:plotIndex+1] + plots[frontIndex:plotIndex] + plots[plotIndex+1:]
 
+
 def removeCommand(userParameters):
-    return
+    global plots
+    # check the number of arguments given and assign variables based on this
+    if userParameters == "":
+        raise SyntaxError("Provide ID (and optionally distance)")
+    userParameters = userParameters.split(" ")
+    if len(userParameters) == 1:
+        try:
+            startIndex = int(userParameters[0])
+            endIndex = startIndex
+        except ValueError:
+            raise ValueError("IDs must be numeric value")
+    else:
+        try:
+            startIndex = int(userParameters[0])
+            endIndex = int(userParameters[1])
+        except ValueError:
+            raise ValueError("IDs must be numeric values")
+        
+    # validate indices
+    if not validIndex(startIndex, endIndex): raise IndexError("Plot IDs out of range")
+
+    plots = plots[:startIndex] + plots[endIndex+1:]
+
+
 def removeallCommand(userParameters):
-    return
+    global plots
+    plots = []
+
+
 def resetposCommand(userParameters):
     return
 def resetscaleCommand(userParameters):
