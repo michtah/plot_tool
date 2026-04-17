@@ -177,7 +177,7 @@ save
 $
 save File
 $
-Saves into File. If the file exists, it overwrites it. If file doesn't exit, it makes it. This saves the graph positioning as well as the plots.
+Saves into File. This saves the graph positioning as well as the plots. 
 $
 sv
 #

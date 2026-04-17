@@ -54,6 +54,7 @@ safe_dict = {"__builtins__": {}, **safe_dict}
 helpString = ""
 
 # generate the command information strings from the helpdata.txt file
+# this is on a separate file to ease the addition of new documentation
 commandHelper = {}
 with open("helpdata.txt", "r") as helpdata:
     helpdataContents = helpdata.read()
@@ -86,6 +87,10 @@ setres / sr
 help
 more
 exit / quit
+save / sv
+load / ld
+list / ls
+undo / ud
 """
 
 # * --------------------------------- #
@@ -271,14 +276,14 @@ def validateColour(colourString: str) -> str:
     raise ValueError(colourString  + " is not a valid colour")
 
 # takes plot string, colour, and size. generates the correctly formatted dictionary.
-def makePlotDictionary(plotString: str, plotColour: str = "#00A000", plotSize: int | float = 1) -> dict:
+def makePlotDictionary(plotString: str, plotColour: str = "#00A000", plotSize: int | float = 1, plotVisible: bool = True) -> dict:
     return {
         "TYPE": getPlotType(plotString),
         "DATA": convertStringToPlot(plotString),
         "DISP": plotString,
         "COLR": validateColour(plotColour),
         "SIZE": plotSize,
-        "VISB": True
+        "VISB": plotVisible
     }
 
 # takes a number and formats it nicely
@@ -829,8 +834,10 @@ def exitCommand(userParameters):
 def helpCommand(userParameters):
     global helpString
     args = parseInput(["", "Command:s"], userParameters)
+    # if no arguments, print the list of commands
     if args == []:
         helpString = "List of commands: " + commandList + "\n\nUse help [cmd] to get info about a command."
+    # otherwise, check if the command is correct and get the correct information about it
     else:
         askCommand = args[0]
         if askCommand in commandHelper:
@@ -839,10 +846,52 @@ def helpCommand(userParameters):
             helpString = "Command not found. Type 'help' without any arguments to get a list of commands."
 
 def saveCommand(userParameters):
-    return
+    # adjust file name based on if it has an extension, and based on if it has its own custom path
+    fileName = parseInput("File:s", userParameters)[0]
+    if ".ptd" in fileName: fileName = fileName.split(".ptd")[0]
+    if "\\" not in fileName: fileName = "saves\\" + fileName + ".ptd"
+
+    # generate the file information. the format is as follows
+    #   first line: four floats representing the graph bounds in the order: llx, lly, urx, ury
+    #   second line: how many plots there are
+    #   each plot afterwards is four lines, the plot string, colour, size, and visibility.
+    fileString = " ".join([str(i) for i in [graphBounds["llx"], graphBounds["lly"], graphBounds["urx"], graphBounds["ury"]]]) + "\n" + str(len(plots)) + "\n"
+    for plot in plots:
+        fileString += plot["DISP"] + "\n" + plot["COLR"] + "\n" + str(plot["SIZE"]) + "\n" + str(plot["VISB"]) + "\n"
+    
+    # write to file
+    # this is saved directly without encryption because there's no necessity for this to be secure
+    with open(fileName, "w") as filePTD:
+        filePTD.write(fileString)
 
 def loadCommand(userParameters):
-    return
+    global graphBounds, plots
+    # adjust file name based on if it has an extension, and based on if it has its own custom path
+    fileName = parseInput("File:s", userParameters)[0]
+    if ".ptd" in fileName: fileName = fileName.split(".ptd")[0]
+    if "\\" not in fileName: fileName = "saves\\" + fileName + ".ptd"
+
+    with open(fileName, "r") as filePTD:
+        # load and replace graph bounds
+        loadedGraphBounds = filePTD.readline()
+        loadedGraphBounds = [float(i) for i in loadedGraphBounds.split(" ")]
+        graphBounds = {"llx":loadedGraphBounds[0], "lly":loadedGraphBounds[1], "urx":loadedGraphBounds[2], "ury":loadedGraphBounds[3]}
+        # get number of plots
+        plotNum = int(filePTD.readline())
+        # create the new list of plots
+        loadedPlots = []
+        for i in range(plotNum):
+            #load in values directly
+            loadedPlot_DISP = filePTD.readline().strip()
+            loadedPlot_COLR = filePTD.readline().strip()
+            loadedPlot_SIZE = filePTD.readline().strip()
+            loadedPlot_VISB = filePTD.readline().strip()
+
+            # convert values to dictionary and add them to the loaded plots
+            loadedPlots.append(makePlotDictionary(loadedPlot_DISP, loadedPlot_COLR, float(loadedPlot_SIZE), loadedPlot_VISB == "True"))
+        
+        # swap current plots with previous plots
+        plots = loadedPlots
 
 def listCommand(userParameters):
     return
