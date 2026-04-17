@@ -615,7 +615,7 @@ def scaleCommand(userParameters):
 
 def setboundsCommand(userParameters):
     global graphBounds
-    args = parseInput(["a:f", "a:f b:f", "a:f b:f c:f d:f"])
+    args = parseInput(["a:f", "a:f b:f", "a:f b:f c:f d:f"], userParameters)
     if len(args) == 1:
         graphBounds = {"llx": -args[0], "lly": -args[0], "urx": args[0], "ury": args[0]}
     if len(args) == 2:
@@ -658,7 +658,7 @@ def swapCommand(userParameters):
 
 
 def toggleCommand(userParameters):
-    plotIndex = parseInput("ID:i", userParameters)
+    plotIndex = parseInput("ID:i", userParameters)[0]
     
     # validate index
     if not validIndex(plotIndex): raise IndexError("ID out of range")
@@ -702,6 +702,7 @@ def frontCommand(userParameters):
 
 
 def removeCommand(userParameters):
+    global plots
     args = parseInput(["Remove:i", "Remove_start:i Remove_end:i"], userParameters)
     if len(args) == 1: startIndex, endIndex = (args[0], args[0])
     else: startIndex, endIndex = args
