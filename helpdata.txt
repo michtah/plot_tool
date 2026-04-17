@@ -164,3 +164,35 @@ $
 Exits the program, closing the window.
 $
 quit
+#
+load
+$
+load File
+$
+Loads from File. This loads the graph position, and the plots.
+$
+ld
+#
+save
+$
+save File
+$
+Saves into File. If the file exists, it overwrites it. If file doesn't exit, it makes it. This saves the graph positioning as well as the plots.
+$
+sv
+#
+list
+$
+list
+$
+Lists all files that exist in the /saves/ directory of the plot tool.
+$
+ls
+#
+undo
+$
+undo
+$
+Undoes the previous instruction. To be more specific it loads the in-memory previous state.
+$
+ud

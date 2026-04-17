@@ -838,6 +838,18 @@ def helpCommand(userParameters):
         else:
             helpString = "Command not found. Type 'help' without any arguments to get a list of commands."
 
+def saveCommand(userParameters):
+    return
+
+def loadCommand(userParameters):
+    return
+
+def listCommand(userParameters):
+    return
+
+def undoCommand(userParameters):
+    return
+
 # parses user input and runs the appropriate command
 def runUserInput(userInput):
     userInput = commandEntry.get()
@@ -874,7 +886,10 @@ def runUserInput(userInput):
         "init": initCommand,             "ii": initCommand,
         "setres": setresCommand,         "sr": setresCommand,
         "help": helpCommand,
-        "exit": exitCommand,             "quit": exitCommand
+        "exit": exitCommand,             "quit": exitCommand,
+        "load": loadCommand,             "ld": loadCommand,
+        "save": saveCommand,             "sv": saveCommand,
+        "list": listCommand,             "ls": listCommand
     }
     
     if userCommand not in validCommands:
