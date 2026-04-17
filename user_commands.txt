@@ -1,5 +1,5 @@
-plot [plot-string] [~colour] [~size]
-    plots the graph plot-string with the colour and size.
+plot [plot-string] ~colour ~size
+    plots the graph plot-string with the colour and size. the colour and size parameters are preceded with a tilde (~).
     the colour and size values can take default values.
     can also take the shorthand "pl".
 
@@ -62,3 +62,6 @@ setres [resolution]
 help [~command]
     lists possible commands if no input is given.
     else, gives some information about a command.
+
+exit / quit
+    exits the program.

@@ -132,6 +132,11 @@ def displayPlots():
         displayStr += "\nID: {:02d}".format(id) + " | [" + ("X" if plot["VISB"] else " ") + "] | " + plot["DISP"]
     plotsString.set(displayStr)
 
+# changes the display of the plot info to a custom string, not the automatically generated plot information
+# this is used by the help command to display information instead of the plot information
+def displayPlotsCustom(string):
+    plotsString.set(string)
+
 
 # ---------------------------------------------------------- #
 # HELPERS                                                    #
@@ -445,11 +450,51 @@ def drawGraph():
 # The commands the user can run as well as the parser for them. #
 # ------------------------------------------------------------- #
 
+# parses user input
+def runUserInput(userInput):
+    userInput = commandEntry.get()
+    userInput = userInput.split(" ", 1) # split into command and arguments string
+    userCommand = userInput[0]
+    userParameters = userInput[1]
+
+    # list of valid commands
+    validCommands = ["plot", "pl", "move", "mv", "scale", "sc", "colour", "color", "cl", "size", "sz", "swap", "sw", "back", "bk", "front", "fr", "remove", "rm", "removeall", "ra", "resetpos", "rp", "resetscale", "rs", "resetgraph", "rg", "init", "ii", "setres", "sr", "help", "exit", "quit"]
+    if userCommand not in validCommands:
+        displayError("Command is invalid. Type \"help\" to view a list of commands.")
+    
+    # update graph UI after running command
+    drawGraph()
+    # clear entry point
+    commandEntry.delete(0, tk.END)
+# bind the enter key to run the user input
+window.bind("<Return>", runUserInput)
+
+# the plot command. the last two strings are taken as the colour and size if there's a tilde before them
+def plotCommand(userParameters):
+    global plots
+    # the parameters are extracted into a list
+    extractedParameters = [i.strip() for i in userParameters.split("~")]
+
+    # depending on the number of inputs given, the plot command may either use a default value or the user given value
+    if len(extractedParameters) == 1:
+        plotParameter = extractedParameters[0]
+        plots.append(makePlotDictionary(plotParameter))
+    if len(extractedParameters) == 2:
+        plotParameter = extractedParameters[0]
+        colourParameter = extractedParameters[1]
+        plots.append(makePlotDictionary(plotParameter, colourParameter))
+    if len(extractedParameters) > 2:
+        plotParameter = extractedParameters[0]
+        colourParameter = extractedParameters[1]
+        sizeParameter = extractedParameters[2]
+        plots.append(makePlotDictionary(plotParameter, colourParameter, sizeParameter))
+    
+
+
 # ----------------------------------------- #
 # MAIN LOOP                                 #
 # Runs the actual program as the main loop. #
 # ----------------------------------------- #
 
-plots.append(makePlotDictionary("y = x**2", "red", 2))
 drawGraph()
 window.mainloop()
