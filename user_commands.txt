@@ -23,6 +23,14 @@ swap [plot-id-1] [plot-id-2]
     swap the order of two plots plot-id-1 and plot-id-2
     can also take the shorthand "sw".
 
+hide [plot-id]
+    hides plot at plot-id
+    can also take the shorthand "hd".
+
+show [plot-id]
+    shows plot at plot-id
+    can also take the shorthand "sh".
+
 back [plot-id]
     pushes the plot in plot-id back one spot.
     can also take the shorthand "bk".

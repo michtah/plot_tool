@@ -1,7 +1,7 @@
-#
-# IMPORTS
-# The external packages that plot_tool uses. All of these come with a default python installation.
-#
+# ----------------------------------------------------------------------------------------------- #
+# IMPORTS                                                                                         #
+# The external packages that plot_tool uses. All of these come with a default python installation #
+# ----------------------------------------------------------------------------------------------- #
 
 import tkinter as tk
 from turtle import TurtleScreen, RawTurtle
@@ -46,10 +46,12 @@ safe_dict["round"] = round
 safe_dict["int"] = int
 safe_dict["range"] = range
 
-# ---------------------------------- #
-# GRAPHICS                           #
-# Defines the graphics for the plot. #
-# ---------------------------------- #
+safe_dict = {"__builtins__": {}, **safe_dict}
+
+# --------------------------------- #
+# GRAPHICS                          #
+# Defines the graphics for the plot #
+# --------------------------------- #
 
 # Create window and set size.
 window = tk.Tk()
@@ -99,12 +101,12 @@ infoLabel.grid(row=3,column=1, padx=2, pady=5, sticky="ew") # place this label
 # ------------------------------------ #
 
 # returns the graph's dimensions (x,y) as a tuple.
-def getGraphDimensions():
+def getGraphDimensions() -> tuple[float, float]:
     global graphBounds
     return (graphBounds["urx"] - graphBounds["llx"], graphBounds["ury"] - graphBounds["lly"])
 
 # returns the centre of the graph as a tuple.
-def getGraphCentre():
+def getGraphCentre() -> tuple[float, float]:
     global graphBounds
     return (graphBounds["urx"]*0.5 + graphBounds["llx"]*0.5, graphBounds["ury"]*0.5 + graphBounds["lly"]*0.5)
 
@@ -138,10 +140,10 @@ def displayPlotsCustom(string):
     plotsString.set(string)
 
 
-# ---------------------------------------------------------- #
-# HELPERS                                                    #
-# Helper functions that aren't commands the user can access. #
-# ---------------------------------------------------------- #
+# --------------------------------------------------------- #
+# HELPERS                                                   #
+# Helper functions that aren't commands the user can access #
+# --------------------------------------------------------- #
 
 # takes a string and deduces its plot type:
 #   - FUNCTION1 : the type "f(t) = t**2" etc.
@@ -171,11 +173,11 @@ def convertStringToPlot(string: str):
         data = [[float(j) for j in i] for i in [i.split(",") for i in string[3:-2].split("),(")]]
     elif plotType == "FUNCTION1":
         string = "".join([i.strip() for i in string.split("=")])
-        data = eval("lambda " + string[2] + " : " + string[4:])
+        data = eval("lambda " + string[2] + " : " + string[4:], safe_dict)
     elif plotType == "FUNCTION2":
-        data = eval("lambda x : " + string.split("=")[1].strip(), {"__builtins__": {}}, safe_dict)
+        data = eval("lambda x : " + string.split("=")[1].strip(), safe_dict)
     else:
-        data = eval("lambda x : " + string, {"__builtins__": {}}, safe_dict)
+        data = eval("lambda x : " + string, safe_dict)
     
     # do some tests to make sure the data is correct and functional
     # test for functions is to test their values out
@@ -204,7 +206,7 @@ def convertStringToPlot(string: str):
 # takes a colour string and corrects it based on what kind of input it is.
 def validateColour(colourString: str) -> str:
     # if it is a colour name, leave it alone.
-    if colourString in ["red","orange","yellow","green","blue","purple","pink","magenta","cyan","brown","black","gray","white","teal","beige"]: return colourString
+    if colourString in ["red","orange","yellow","green","blue","purple","pink","magenta","cyan","brown","black","gray","white","teal","beige","grey"]: return colourString
     
     # if it is a hexadecimal code with a hashtag, leave it alone.
     # the all function is a function that returns True only if all of its elements are True.
@@ -225,7 +227,7 @@ def validateColour(colourString: str) -> str:
         return "#"+"".join([hex(256 + abs(int(i)%256))[3:] for i in colourString[4:-1].split(",")])
     
     # if the input is ANYTHING ELSE, raise an error
-    raise ValueError(colourString  + "is not a valid colour.")
+    raise ValueError(colourString  + " is not a valid colour.")
 
 # takes plot string, colour, and size. generates the correctly formatted dictionary.
 def makePlotDictionary(plotString: str, plotColour: str = "#00A000", plotSize: int | float = 1) -> dict:
@@ -244,13 +246,13 @@ def formatNumber(value: int | float) -> str:
     if abs(value) > 1e6 or abs(value) < 1e-2: return "{:.2e}".format(value).replace("+","")
     else: return "{:.2f}".format(value)
 
-# ------------------------------------- #
-# PLOTTING AND RENDERING                #
-# The tools that plot the actual graph. #
-# ------------------------------------- #
+# ------------------------------------ #
+# PLOTTING AND RENDERING               #
+# The tools that plot the actual graph #
+# ------------------------------------ #
 
 # returns grid lines with good spacing based on the size of the grid.
-def getBestGrid():
+def getBestGrid() -> list[float | int]:
     # calculate ideal tick distance, which is 1/10th the size of the graph.
     dx, dy = getGraphDimensions()[0] * 0.1, getGraphDimensions()[1] * 0.1
 
@@ -369,7 +371,7 @@ def drawFunction(func: function, colour: str, size: float | int):
     x = graphBounds["llx"] - graphResolution
     try:
         graphTurtle.teleport(x, func(x))
-    except ArithmeticError:
+    except ArithmeticError, tk.TclError:
         graphTurtle.teleport(x, 0)
     
     while x < graphBounds["urx"]:
@@ -386,7 +388,7 @@ def drawFunction(func: function, colour: str, size: float | int):
 # draws a point plot
 def drawPoint(point: tuple[float | int, float | int], colour: str, size: float | int):
     graphTurtle.pencolor(colour)
-    graphTurtle.pensize(size)
+    graphTurtle.pensize(size*5)
 
     graphTurtle.teleport(point[0] + graphResolution, point[1])
     graphTurtle.goto(    point[0], point[1] + graphResolution)
@@ -427,9 +429,11 @@ def drawPolygon(pointList: list[tuple], colour: str, size: float | int):
 # full rendering, including updating text
 def drawGraph():
     global plots
-    drawGrid()
-    for plot in plots:
-        if not plot["VISB"]: continue
+    graphTurtle.clear() # clear screen
+    updateBounds() # update the bounds of the plot as they may have changed
+    drawGrid() # draw the grid again
+    for plot in plots: # draw each plot
+        if not plot["VISB"]: continue # if the plot is invisible, skip
         else:
             if plot["TYPE"] in ["FUNCTION1", "FUNCTION2", "FUNCTION3"]:
                 drawFunction(plot["DATA"], plot["COLR"], plot["SIZE"])
@@ -444,38 +448,24 @@ def drawGraph():
     displayInfo()
     displayPlots()
 
+# ------------------------------------------------------------ #
+# USER COMMANDS AND INPUT                                      #
+# The commands the user can run as well as the parser for them #
+# ------------------------------------------------------------ #
 
-# ------------------------------------------------------------- #
-# USER COMMANDS AND INPUT                                       #
-# The commands the user can run as well as the parser for them. #
-# ------------------------------------------------------------- #
 
-# parses user input
-def runUserInput(userInput):
-    userInput = commandEntry.get()
-    userInput = userInput.split(" ", 1) # split into command and arguments string
-    userCommand = userInput[0]
-    userParameters = userInput[1]
-
-    # list of valid commands
-    validCommands = ["plot", "pl", "move", "mv", "scale", "sc", "colour", "color", "cl", "size", "sz", "swap", "sw", "back", "bk", "front", "fr", "remove", "rm", "removeall", "ra", "resetpos", "rp", "resetscale", "rs", "resetgraph", "rg", "init", "ii", "setres", "sr", "help", "exit", "quit"]
-    if userCommand not in validCommands:
-        displayError("Command is invalid. Type \"help\" to view a list of commands.")
-    
-    # update graph UI after running command
-    drawGraph()
-    # clear entry point
-    commandEntry.delete(0, tk.END)
-# bind the enter key to run the user input
-window.bind("<Return>", runUserInput)
-
-# the plot command. the last two strings are taken as the colour and size if there's a tilde before them
+# plot command. takes in one required input, which is the plot function / list / point
 def plotCommand(userParameters):
     global plots
-    # the parameters are extracted into a list
+    # see if the user has provided a valid input for the command to parse.
+    if userParameters == "":
+        raise SyntaxError("Provide at least one parameter.")
+    # if there are any, the parameters are extracted into a list
     extractedParameters = [i.strip() for i in userParameters.split("~")]
 
     # depending on the number of inputs given, the plot command may either use a default value or the user given value
+    if len(extractedParameters) == 0:
+        raise SyntaxError("Not enough parameters.")
     if len(extractedParameters) == 1:
         plotParameter = extractedParameters[0]
         plots.append(makePlotDictionary(plotParameter))
@@ -488,13 +478,216 @@ def plotCommand(userParameters):
         colourParameter = extractedParameters[1]
         sizeParameter = extractedParameters[2]
         plots.append(makePlotDictionary(plotParameter, colourParameter, sizeParameter))
+
+
+def moveCommand(userParameters):
+    global graphBounds
+    # check the number of arguments given
+    if userParameters == "":
+        raise SyntaxError("Provide two parameters.")
+    userParameters = userParameters.split(" ")
+    if len(userParameters) == 1:
+        raise SyntaxError("Provide two arguments.")
+    
+    # check that they are numeric values, and assign them to variables
+    try:
+        dx = float(userParameters[0])
+        dy = float(userParameters[1])
+    except ValueError:
+        raise ValueError("Arguments must be numeric values.")
+
+    graphBounds["llx"] += dx
+    graphBounds["lly"] += dy
+    graphBounds["urx"] += dx
+    graphBounds["ury"] += dy
+
+
+def scaleCommand(userParameters):
+    global graphBounds
+    # check the number of arguments given
+    if userParameters == "":
+        raise SyntaxError("Provide at least one argument.")
+    userParameters = userParameters.split(" ")
+    # if there's just one input, we assign this to both scaling axes
+    if len(userParameters) == 1:
+        try:
+            # check that the input is a numeric value, and assign to scale_x and scale_y
+            scale_x = float(userParameters[0])
+            scale_y = float(userParameters[0])
+        except ValueError:
+            raise ValueError("Arguments must be numeric values.")
+    
+    #if there's more, the first and second inputs are the scaling along the x and y axes respectively
+    else:
+        try:
+            scale_x = float(userParameters[0])
+            scale_y = float(userParameters[1])
+        except ValueError:
+            raise ValueError("Arguments must be numeric values.")
+    
+    # the scaling should be around the center, not just the graph bounds, so we need to find the center and also the dimensions
+    graphDim_x, graphDim_y = getGraphDimensions()
+    graphCen_x, graphCen_y = getGraphCentre()
+
+    graphBounds["llx"] = graphCen_x - graphDim_x * scale_x * 0.5
+    graphBounds["lly"] = graphCen_y - graphDim_y * scale_y * 0.5
+    graphBounds["urx"] = graphCen_x + graphDim_x * scale_x * 0.5
+    graphBounds["ury"] = graphCen_y + graphDim_y * scale_y * 0.5
+
+
+def colourCommand(userParameters):
+    global plots
+    # check the number of arguments given
+    if userParameters == "":
+        raise SyntaxError("Provide two arguments.")
+    userParameters = userParameters.split(" ")
+    if len(userParameters) == 1:
+        raise SyntaxError("Provide two arguments.")
+    
+    # convert the index input to the correct types and assign to variables
+    try:
+        plotIndex = int(userParameters[0])
+        plotColour = userParameters[1]
+    except ValueError:
+        raise ValueError("First argument must be an integer.")
+    
+    # raise an index error if the index is out of bounds
+    if plotIndex >= len(plots): raise IndexError("Plot ID out of range.")
+    
+    # change the colour of the plot with id plotIndex to the colour plotColour
+    plots[plotIndex]["COLR"] = validateColour(plotColour)
     
 
+def sizeCommand(userParameters):
+    global plots
+    # check the number of arguments given
+    if userParameters == "":
+        raise SyntaxError("Provide two arguments.")
+    userParameters = userParameters.split(" ")
+    if len(userParameters) == 1:
+        raise SyntaxError("Provide two arguments.")
+    
+    # convert the index input to the correct types and assign to variables
+    try:
+        plotIndex = int(userParameters[0])
+        plotSize = float(userParameters[1])
+    except ValueError:
+        raise ValueError("First argument must be an integer, the second must be a numeric value.")
+    
+    # raise an index error if the index is out of bounds
+    if plotIndex >= len(plots): raise IndexError("Plot ID out of range.")
+    
+    # change thickness of the plot with id plotIndex to plotSize.
+    plots[plotIndex]["SIZE"] = plotSize
 
-# ----------------------------------------- #
-# MAIN LOOP                                 #
-# Runs the actual program as the main loop. #
-# ----------------------------------------- #
+
+def swapCommand(userParameters):
+    global plots
+    # check the number of arguments given
+    if userParameters == "":
+        raise SyntaxError("Provide two arguments.")
+    userParameters = userParameters.split(" ")
+    if len(userParameters) == 1:
+        raise SyntaxError("Provide two arguments.")
+    
+    # convert the index input to the correct types and assign to variables
+    try:
+        plotIndex_1 = int(userParameters[0])
+        plotIndex_2 = int(userParameters[1])
+    except ValueError:
+        raise ValueError("Arguments must be integer values.")
+    
+    # raise an index error if the indices are out of bounds
+    if plotIndex_1 >= len(plots) or plotIndex_2 >= len(plots): raise IndexError("Plot ID out of range.")
+
+    # swap the two plots
+    plots[plotIndex_1], plots[plotIndex_2] = plots[plotIndex_2], plots[plotIndex_1]
+
+def hideCommand(userParameters):
+    return
+def showCommand(userParameters):
+    return
+def backCommand(userParameters):
+    return
+def frontCommand(userParameters):
+    return
+def removeCommand(userParameters):
+    return
+def removeallCommand(userParameters):
+    return
+def resetposCommand(userParameters):
+    return
+def resetscaleCommand(userParameters):
+    return
+def resetgraphCommand(userParameters):
+    return
+def initCommand(userParameters):
+    return
+def setresCommand(userParameters):
+    return
+def helpCommand(userParameters):
+    return
+def exitCommand(userParameters):
+    return
+
+# parses user input and runs the appropriate command
+def runUserInput(userInput):
+    userInput = commandEntry.get()
+    userInput = userInput.split(" ", 1) # split into command and arguments string
+    userCommand = userInput[0]
+
+    # list of valid commands
+    validCommands = ["plot", "pl", "move", "mv", "scale", "sc", "colour", "color", "cl", "size", "sz", "swap", "sw", "back", "bk", "front", "fr", "remove", "rm", "removeall", "ra", "resetpos", "rp", "resetscale", "rs", "resetgraph", "rg", "init", "ii", "setres", "sr", "help", "exit", "quit"]
+    
+    # take the user input for the command. if it doesn't exist (some commands have no inputs after all), give a default blank string instead
+    try:
+        userParameters = userInput[1]
+    except IndexError:
+        userParameters = ""
+
+    # a dictionary with keyword-function pairs, associating the function with the appropriate keyword
+    commandKeywordPairs = {
+        "plot" : plotCommand, "pl": plotCommand,
+        "move": moveCommand, "mv": moveCommand,
+        "scale": scaleCommand, "sc": scaleCommand,
+        "colour": colourCommand, "color": colourCommand, "cl": colourCommand,
+        "size": sizeCommand, "sz": sizeCommand,
+        "swap": swapCommand, "sw": swapCommand,
+        "hide": hideCommand, "hd": hideCommand,
+        "show": showCommand, "sh": showCommand,
+        "back": backCommand, "bk": backCommand,
+        "front": frontCommand, "fr": frontCommand,
+        "remove": removeCommand, "rm": removeCommand,
+        "removeall": removeallCommand, "ra": removeallCommand,
+        "resetpos": resetposCommand, "rp": resetposCommand,
+        "resetscale": resetscaleCommand, "rs": resetscaleCommand,
+        "resetgraph": resetgraphCommand, "rg": resetgraphCommand,
+        "init": initCommand, "ii": initCommand,
+        "setres": setresCommand, "sr": setresCommand,
+        "help": helpCommand,
+        "exit": exitCommand, "quit": exitCommand
+    }
+    
+    if userCommand not in validCommands:
+        displayError("Command is invalid. Type \"help\" to view a list of commands.")
+    else:
+        try: commandKeywordPairs[userCommand](userParameters)
+        except Exception as exc:
+            if hasattr(exc, "message"): displayError(exc.message)
+            else: displayError(exc)
+        
+    # update graph UI after running command
+    drawGraph()
+    # clear entry point
+    commandEntry.delete(0, tk.END)
+# bind the enter key to run the user input
+window.bind("<Return>", runUserInput)
+
+
+# ---------------------------------------- #
+# MAIN LOOP                                #
+# Runs the actual program as the main loop #
+# ---------------------------------------- #
 
 drawGraph()
 window.mainloop()
