@@ -56,6 +56,7 @@ safe_dict = {"__builtins__": {}, **safe_dict}
 # Create window and set size.
 window = tk.Tk()
 window.geometry("1500x1000")
+window.title("Plot Tool")
 
 # Create the canvas and the screen.
 # The canvas is the physical placement of the screen
