@@ -1,0 +1,166 @@
+plot
+$
+plot plot_string ~colour ~size
+$
+Plots the graph of plot_string. This can be a point, a polygon, a line, or a function. The colour and size arguments need to have a tilde '~' preceding them. These values are optional.
+$
+pl
+#
+plotmany
+$
+plotmany plots_string ~colour ~size
+$
+Plots the graphs contained in plots_string. The plots are separated with semicolons ';'. The colour and size arguments need to have a tilde '~' preceding them. These values are optional.
+$
+pm
+#
+move
+$
+move dx dy
+$
+Moves the graph view by dx in the x-axis and by dy in the y-axis.
+$
+mv
+#
+scale
+$
+scale k
+scale kx ky
+$
+Scales the plots axes. If one input k is given, scales by k along both axes. If two inputs kx, ky are given, scales by kx on the x axis, and by ky on the y axis.
+$
+sc
+#
+setbounds
+$
+setbounds a
+setbounds a b
+setbounds a b c d
+$
+Sets the boundaries of the graph exactly. If only one input a is given, both axes are mapped to the range -a to a. If two inputs a and b are given, the x axis is mapped to the range -a to a, and the y axis is mapped to the range -b to b. If four inputs a, b, c, d are given, the plot maps the x axis to the range a to c, and the y axis to the range b to d.
+$
+sb
+#
+colour
+$
+colour ID Colour
+$
+Sets the plot with the corresponding ID to the given colour. This colour can be a name, a hex code, or an rgb function without spaces 'rgb(x,y,z)'.
+$
+color cl
+#
+size
+$
+size ID Size
+$
+Sets the plot with the corresponding ID to the given size. This size is a numeric value.
+$
+sz
+#
+swap
+$
+swap ID_1 ID_2
+$
+Swaps the two plots at ID_1 and ID_2.
+$
+sw
+#
+toggle
+$
+toggle ID
+$
+Toggles the visibility of the plot at the corresponding ID.
+$
+tg
+#
+back
+$
+back ID
+back ID Back
+$
+Pushes the plot at the corresponding ID back. If no amount is given, it is pushed back one space. If specified it moves back by the given spaces. The other plots stay in place. If the plot can't go back the amount, it'll go as far back as it can.
+$
+bk
+#
+front
+$
+front ID
+front ID Front
+$
+Pushes the plot at the corresponding ID forward. If no amount is given, it is pushed forward one space. If specified it moves forward by the given spaces. The other plots stay in place. If the plot can't go forward the amount, it'll go as far to the front as it can.
+$
+fr
+#
+remove
+$
+remove ID
+remove ID_start ID_end
+$
+Removes the plot at ID, or the plots between ID_start and ID_end.
+$
+rm
+#
+removeall
+$
+removeall
+$
+Removes all plots.
+$
+ra
+#
+resetpos
+$
+resetpos
+$
+Resets the centre of the graph. However, does not affect the scale.
+$
+rp
+#
+resetscale
+$
+resetscale
+$
+Resets the scale of the graph. However, does not affect the centre of the graph.
+$
+rs
+#
+resetgraph
+$
+resetgraph
+$
+Resets both the scale and centre of the graph. This means both ranges are mapped from -2 to 2 again.
+$
+rg
+#
+init
+$
+init
+$
+Resets the scale and centre, and also removes all plots. This means both ranges are mapped from -2 to 2 again.
+$
+ii
+#
+setres
+$
+setres Resolution
+$
+Sets the pen resolution of the plot. This specifies the distance between the samples the plotter takes. By default, this value is 0.001.
+$
+sr
+#
+help
+$
+help
+help Command
+$
+This command. If no inputs are given, it prints the list of commands. If given a command, it will print information about it.
+$
+None
+#
+exit
+$
+exit
+$
+Exits the program, closing the window.
+$
+quit

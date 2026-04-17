@@ -53,6 +53,41 @@ safe_dict = {"__builtins__": {}, **safe_dict}
 # it holds the information that the help command and the more command display
 helpString = ""
 
+# generate the command information strings from the helpdata.txt file
+commandHelper = {}
+with open("helpdata.txt", "r") as helpdata:
+    helpdataContents = helpdata.read()
+    helpdataContents = [[commandline.strip() for commandline in commanddata.split("$")] for commanddata in helpdataContents.split("#")]
+
+    for commandInfo in helpdataContents:
+        commandHelper[commandInfo[0]] = ("Name:\n" + commandInfo[0] + "\n\nUsage:\n" + commandInfo[1] + "\n\nDescription:\n" + commandInfo[2] + "\n\nAliases:\n" + commandInfo[3])
+
+# this is the command list
+# stores the list of commands and their aliases
+commandList = """
+plot / pl
+plotmany / pm
+move / mv
+scale / sc
+setbounds / sb
+colour / color / cl
+size / sz
+swap / sw
+toggle / tg
+back / bk
+front / fr
+remove / rm
+removeall / ra
+resetpos / rp
+resetscale / rs
+resetgraph / rg
+init / ii
+setres / sr
+help
+more
+exit / quit
+"""
+
 # * --------------------------------- #
 # * GRAPHICS                          #
 # * Defines the graphics for the plot #
@@ -695,7 +730,7 @@ def frontCommand(userParameters):
 
 def removeCommand(userParameters):
     global plots
-    args = parseInput(["Remove:d", "Remove_start:d Remove_end:d"], userParameters)
+    args = parseInput(["ID:d", "ID_start:d ID_end:d"], userParameters)
     if len(args) == 1: startIndex, endIndex = (args[0], args[0])
     else: startIndex, endIndex = args
 
@@ -757,10 +792,16 @@ def exitCommand(userParameters):
     exit()
 
 def helpCommand(userParameters):
-    return
-
-def moreCommand(userParameters):
-    return
+    global helpString
+    args = parseInput(["", "Command:s"], userParameters)
+    if args == []:
+        helpString = "List of commands: " + commandList + "\n\nUse help [cmd] to get info about a command."
+    else:
+        askCommand = args[0]
+        if askCommand in commandHelper:
+            helpString = commandHelper[askCommand]
+        else:
+            helpString = "Command not found. Type 'help' without any arguments to get a list of commands."
 
 # parses user input and runs the appropriate command
 def runUserInput(userInput):
@@ -768,8 +809,8 @@ def runUserInput(userInput):
     userInput = userInput.split(" ", 1) # split into command and arguments string
     userCommand = userInput[0]
 
-    # list of valid commands
-    validCommands = ["plot", "pl", "move", "mv", "scale", "sc", "colour", "color", "cl", "size", "sz", "swap", "sw", "back", "bk", "front", "fr", "remove", "rm", "removeall", "ra", "resetpos", "rp", "resetscale", "rs", "resetgraph", "rg", "init", "ii", "setres", "sr", "help", "exit", "quit",  "toggle", "tg", "plotmany", "pm", "setbounds", "sb"]
+    # get list of valid commands by turning the command list into a proper list
+    validCommands = commandList.replace(" / ","\n").split("\n")
     
     # take the user input for the command. if it doesn't exist (some commands have no inputs after all), give a default blank string instead
     try:
@@ -779,26 +820,26 @@ def runUserInput(userInput):
 
     # a dictionary with keyword-function pairs, associating the function with the appropriate keywords
     commandKeywordPairs = {
-        "plot" : plotCommand, "pl": plotCommand,
-        "plotmany": plotsCommand, "pm": plotsCommand,
-        "move": moveCommand, "mv": moveCommand,
-        "scale": scaleCommand, "sc": scaleCommand,
-        "setbounds": setboundsCommand, "sb": setboundsCommand,
-        "colour": colourCommand, "color": colourCommand, "cl": colourCommand,
-        "size": sizeCommand, "sz": sizeCommand,
-        "swap": swapCommand, "sw": swapCommand,
-        "toggle": toggleCommand, "tg": toggleCommand,
-        "back": backCommand, "bk": backCommand,
-        "front": frontCommand, "fr": frontCommand,
-        "remove": removeCommand, "rm": removeCommand,
-        "removeall": removeallCommand, "ra": removeallCommand,
-        "resetpos": resetposCommand, "rp": resetposCommand,
+        "plot" : plotCommand,            "pl": plotCommand,
+        "plotmany": plotsCommand,        "pm": plotsCommand,
+        "move": moveCommand,             "mv": moveCommand,
+        "scale": scaleCommand,           "sc": scaleCommand,
+        "setbounds": setboundsCommand,   "sb": setboundsCommand,
+        "colour": colourCommand,         "color": colourCommand,    "cl": colourCommand,
+        "size": sizeCommand,             "sz": sizeCommand,
+        "swap": swapCommand,             "sw": swapCommand,
+        "toggle": toggleCommand,         "tg": toggleCommand,
+        "back": backCommand,             "bk": backCommand,
+        "front": frontCommand,           "fr": frontCommand,
+        "remove": removeCommand,         "rm": removeCommand,
+        "removeall": removeallCommand,   "ra": removeallCommand,
+        "resetpos": resetposCommand,     "rp": resetposCommand,
         "resetscale": resetscaleCommand, "rs": resetscaleCommand,
         "resetgraph": resetgraphCommand, "rg": resetgraphCommand,
-        "init": initCommand, "ii": initCommand,
-        "setres": setresCommand, "sr": setresCommand,
+        "init": initCommand,             "ii": initCommand,
+        "setres": setresCommand,         "sr": setresCommand,
         "help": helpCommand,
-        "exit": exitCommand, "quit": exitCommand
+        "exit": exitCommand,             "quit": exitCommand
     }
     
     if userCommand not in validCommands:
@@ -815,7 +856,8 @@ def runUserInput(userInput):
     # if the command is a help or more command,
     # manually update the plot information section
     # using the help string that these functions set
-    displayPlotsCustom(helpString)
+    if userCommand == "help":
+        displayPlotsCustom(helpString)
 
     
     # clear entry point
