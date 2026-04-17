@@ -480,6 +480,30 @@ def plotCommand(userParameters):
         sizeParameter = extractedParameters[2]
         plots.append(makePlotDictionary(plotParameter, colourParameter, sizeParameter))
 
+def plotsCommand(userParameters):
+    global plots
+    
+    # see if the user has provided a valid input for the command to parse.
+    if userParameters == "":
+        raise SyntaxError("Provide at least plot data (and optionally colour and size)")
+    # if there are any, the parameters are extracted into a list
+    extractedParameters = [i.strip() for i in userParameters.split("~")]
+    if len(extractedParameters) == 1:
+        plotParameters = [i.strip() for i in extractedParameters[0].split(";")]
+        for plotParameter in plotParameters:
+            plots.append(makePlotDictionary(plotParameter))
+    if len(extractedParameters) == 2:
+        plotParameters = [i.strip() for i in extractedParameters[0].split(";")]
+        colourParameter = extractedParameters[1]
+        for plotParameter in plotParameters:
+            plots.append(makePlotDictionary(plotParameter, colourParameter))
+    if len(extractedParameters) > 2:
+        plotParameters = [i.strip() for i in extractedParameters[0].split(";")]
+        colourParameter = extractedParameters[1]
+        sizeParameter = extractedParameters[2]
+        for plotParameter in plotParameters:
+            plots.append(makePlotDictionary(plotParameter, colourParameter, sizeParameter))
+
 
 def moveCommand(userParameters):
     global graphBounds
@@ -735,7 +759,7 @@ def runUserInput(userInput):
     userCommand = userInput[0]
 
     # list of valid commands
-    validCommands = ["plot", "pl", "move", "mv", "scale", "sc", "colour", "color", "cl", "size", "sz", "swap", "sw", "back", "bk", "front", "fr", "remove", "rm", "removeall", "ra", "resetpos", "rp", "resetscale", "rs", "resetgraph", "rg", "init", "ii", "setres", "sr", "help", "exit", "quit",  "toggle", "tg"]
+    validCommands = ["plot", "pl", "move", "mv", "scale", "sc", "colour", "color", "cl", "size", "sz", "swap", "sw", "back", "bk", "front", "fr", "remove", "rm", "removeall", "ra", "resetpos", "rp", "resetscale", "rs", "resetgraph", "rg", "init", "ii", "setres", "sr", "help", "exit", "quit",  "toggle", "tg", "plotmany", "pm"]
     
     # take the user input for the command. if it doesn't exist (some commands have no inputs after all), give a default blank string instead
     try:
@@ -746,6 +770,7 @@ def runUserInput(userInput):
     # a dictionary with keyword-function pairs, associating the function with the appropriate keyword
     commandKeywordPairs = {
         "plot" : plotCommand, "pl": plotCommand,
+        "plotmany": plotsCommand, "pm": plotsCommand,
         "move": moveCommand, "mv": moveCommand,
         "scale": scaleCommand, "sc": scaleCommand,
         "colour": colourCommand, "color": colourCommand, "cl": colourCommand,

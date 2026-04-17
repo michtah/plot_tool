@@ -3,9 +3,9 @@ plot [plot-string] ~colour ~size
     the colour and size values can take default values.
     can also take the shorthand "pl".
 
-plots [plots-string] ~colour ~size
+plotmany [plots-string] ~colour ~size
     plots many plots. these plots are separated by semicolons. the other aspects are the same.
-    can also take the shorthand "ps".
+    can also take the shorthand "pm".
 
 move [dx] [dy]
     moves the centre of the graph by dx in the x direction and by dy in the y direction.
