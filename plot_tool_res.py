@@ -608,7 +608,9 @@ def swapCommand(userParameters):
     # swap the two plots
     plots[plotIndex_1], plots[plotIndex_2] = plots[plotIndex_2], plots[plotIndex_1]
 
-def hideCommand(userParameters):
+
+def toggleCommand(userParameters):
+    # pretty much the same as the show and hide command but with the visibility set to the opposite of what it is.
     global plots
     # check the number of arguments given
     if userParameters == "":
@@ -625,29 +627,7 @@ def hideCommand(userParameters):
     if not validIndex(plotIndex): raise IndexError("Plot ID out of range.")
 
     # set the visibility of the plot to false.
-    plots[plotIndex]["VISB"] = False
-
-
-def showCommand(userParameters):
-    # pretty much the same as the hide command but with the visibility set to true instead.
-    global plots
-    # check the number of arguments given
-    if userParameters == "":
-        raise SyntaxError("Provide one argument.")
-    userParameters = userParameters.split(" ")
-
-    # convert the index input to the correct type
-    try:
-        plotIndex = int(userParameters[0])
-    except ValueError:
-        raise ValueError("Argument must be integer value.")
-    
-    # raise an idex error if the index if out of bounds
-    if not validIndex(plotIndex): raise IndexError("Plot ID out of range.")
-
-    # set the visibility of the plot to false.
-    plots[plotIndex]["VISB"] = True
-
+    plots[plotIndex]["VISB"] = not plots[plotIndex]["VISB"]
 
 def backCommand(userParameters):
     return
@@ -679,7 +659,7 @@ def runUserInput(userInput):
     userCommand = userInput[0]
 
     # list of valid commands
-    validCommands = ["plot", "pl", "move", "mv", "scale", "sc", "colour", "color", "cl", "size", "sz", "swap", "sw", "back", "bk", "front", "fr", "remove", "rm", "removeall", "ra", "resetpos", "rp", "resetscale", "rs", "resetgraph", "rg", "init", "ii", "setres", "sr", "help", "exit", "quit", "hide", "hd", "show", "sh"]
+    validCommands = ["plot", "pl", "move", "mv", "scale", "sc", "colour", "color", "cl", "size", "sz", "swap", "sw", "back", "bk", "front", "fr", "remove", "rm", "removeall", "ra", "resetpos", "rp", "resetscale", "rs", "resetgraph", "rg", "init", "ii", "setres", "sr", "help", "exit", "quit",  "toggle", "tg"]
     
     # take the user input for the command. if it doesn't exist (some commands have no inputs after all), give a default blank string instead
     try:
@@ -695,8 +675,7 @@ def runUserInput(userInput):
         "colour": colourCommand, "color": colourCommand, "cl": colourCommand,
         "size": sizeCommand, "sz": sizeCommand,
         "swap": swapCommand, "sw": swapCommand,
-        "hide": hideCommand, "hd": hideCommand,
-        "show": showCommand, "sh": showCommand,
+        "toggle": toggleCommand, "tg": toggleCommand,
         "back": backCommand, "bk": backCommand,
         "front": frontCommand, "fr": frontCommand,
         "remove": removeCommand, "rm": removeCommand,

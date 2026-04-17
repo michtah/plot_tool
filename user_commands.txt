@@ -31,6 +31,10 @@ show [plot-id]
     shows plot at plot-id
     can also take the shorthand "sh".
 
+toggle [plot-id]
+    toggles visibility of plot at plot-id
+    can also take the shorthand "tg".
+
 back [plot-id]
     pushes the plot in plot-id back one spot.
     can also take the shorthand "bk".
