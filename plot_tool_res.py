@@ -81,7 +81,7 @@ commandEntry.grid(row=0,column=1, padx=1, pady=0, sticky="ew")
 
 # errors
 errorString = tk.StringVar(window, value="") # create string variable to store plot information
-errorLabel = tk.Label(window, textvariable=errorString, font=("Courier New", 9), wraplength=350, justify="left", height=1, fg="red", anchor="w") # create label that displays the plot information
+errorLabel = tk.Label(window, textvariable=errorString, font=("Courier New", 9), wraplength=350, justify="left", height=2, fg="red", anchor="w") # create label that displays the plot information
 errorLabel.grid(row=1, column=1, padx=2, pady=1, sticky="ew") # place this label
 
 # plot list
@@ -227,7 +227,7 @@ def validateColour(colourString: str) -> str:
         return "#"+"".join([hex(256 + abs(int(i)%256))[3:] for i in colourString[4:-1].split(",")])
     
     # if the input is ANYTHING ELSE, raise an error
-    raise ValueError(colourString  + " is not a valid colour.")
+    raise ValueError(colourString  + " is not a valid colour")
 
 # takes plot string, colour, and size. generates the correctly formatted dictionary.
 def makePlotDictionary(plotString: str, plotColour: str = "#00A000", plotSize: int | float = 1) -> dict:
@@ -464,13 +464,9 @@ def plotCommand(userParameters):
     global plots
     # see if the user has provided a valid input for the command to parse.
     if userParameters == "":
-        raise SyntaxError("Provide at least one parameter.")
+        raise SyntaxError("Provide at least plot data (and optionally colour and size)")
     # if there are any, the parameters are extracted into a list
     extractedParameters = [i.strip() for i in userParameters.split("~")]
-
-    # depending on the number of inputs given, the plot command may either use a default value or the user given value
-    if len(extractedParameters) == 0:
-        raise SyntaxError("Not enough parameters.")
     if len(extractedParameters) == 1:
         plotParameter = extractedParameters[0]
         plots.append(makePlotDictionary(plotParameter))
@@ -489,17 +485,17 @@ def moveCommand(userParameters):
     global graphBounds
     # check the number of arguments given
     if userParameters == "":
-        raise SyntaxError("Provide two parameters.")
+        raise SyntaxError("Provide two parameters (dx, dy)")
     userParameters = userParameters.split(" ")
     if len(userParameters) == 1:
-        raise SyntaxError("Provide two arguments.")
+        raise SyntaxError("Provide two arguments (dx, dy)")
     
     # check that they are numeric values, and assign them to variables
     try:
         dx = float(userParameters[0])
         dy = float(userParameters[1])
     except ValueError:
-        raise ValueError("Arguments must be numeric values.")
+        raise ValueError("dx and dy must be numeric values")
 
     graphBounds["llx"] += dx
     graphBounds["lly"] += dy
@@ -511,7 +507,7 @@ def scaleCommand(userParameters):
     global graphBounds
     # check the number of arguments given
     if userParameters == "":
-        raise SyntaxError("Provide at least one argument.")
+        raise SyntaxError("Provide at least one scale")
     userParameters = userParameters.split(" ")
     # if there's just one input, we assign this to both scaling axes
     if len(userParameters) == 1:
@@ -520,7 +516,7 @@ def scaleCommand(userParameters):
             scale_x = float(userParameters[0])
             scale_y = float(userParameters[0])
         except ValueError:
-            raise ValueError("Arguments must be numeric values.")
+            raise ValueError("Scale must be numeric value")
     
     #if there's more, the first and second inputs are the scaling along the x and y axes respectively
     else:
@@ -528,7 +524,7 @@ def scaleCommand(userParameters):
             scale_x = float(userParameters[0])
             scale_y = float(userParameters[1])
         except ValueError:
-            raise ValueError("Arguments must be numeric values.")
+            raise ValueError("Scales must be numeric values")
     
     # the scaling should be around the center, not just the graph bounds, so we need to find the center and also the dimensions
     graphDim_x, graphDim_y = getGraphDimensions()
@@ -544,20 +540,20 @@ def colourCommand(userParameters):
     global plots
     # check the number of arguments given
     if userParameters == "":
-        raise SyntaxError("Provide two arguments.")
+        raise SyntaxError("Provide ID and colour")
     userParameters = userParameters.split(" ")
     if len(userParameters) == 1:
-        raise SyntaxError("Provide two arguments.")
+        raise SyntaxError("Provide ID and colour")
     
     # convert the inputs to the correct types and assign to variables
     try:
         plotIndex = int(userParameters[0])
         plotColour = userParameters[1]
     except ValueError:
-        raise ValueError("First argument must be an integer.")
+        raise ValueError("ID must be numeric")
     
-    # raise an index error if the index is out of bounds
-    if not validIndex(plotIndex): raise IndexError("Plot ID out of range.")
+    # validate index
+    if not validIndex(plotIndex): raise IndexError("Plot ID out of range")
     
     # change the colour of the plot with id plotIndex to the colour plotColour
     plots[plotIndex]["COLR"] = validateColour(plotColour)
@@ -567,20 +563,20 @@ def sizeCommand(userParameters):
     global plots
     # check the number of arguments given
     if userParameters == "":
-        raise SyntaxError("Provide two arguments.")
+        raise SyntaxError("Provide ID and size")
     userParameters = userParameters.split(" ")
     if len(userParameters) == 1:
-        raise SyntaxError("Provide two arguments.")
+        raise SyntaxError("Provide ID and size")
     
     # convert the inputs to the correct types and assign to variables
     try:
         plotIndex = int(userParameters[0])
         plotSize = float(userParameters[1])
     except ValueError:
-        raise ValueError("First argument must be an integer, the second must be a numeric value.")
+        raise ValueError("ID and size must be numeric")
     
-    # raise an index error if the index is out of bounds
-    if not validIndex(plotIndex): raise IndexError("Plot ID out of range.")
+    # validate index
+    if not validIndex(plotIndex): raise IndexError("Plot ID out of range")
     
     # change thickness of the plot with id plotIndex to plotSize.
     plots[plotIndex]["SIZE"] = plotSize
@@ -590,20 +586,20 @@ def swapCommand(userParameters):
     global plots
     # check the number of arguments given
     if userParameters == "":
-        raise SyntaxError("Provide two arguments.")
+        raise SyntaxError("Provide two indices")
     userParameters = userParameters.split(" ")
     if len(userParameters) == 1:
-        raise SyntaxError("Provide two arguments.")
+        raise SyntaxError("Provide two indices")
     
     # convert the index input to the correct types and assign to variables
     try:
         plotIndex_1 = int(userParameters[0])
         plotIndex_2 = int(userParameters[1])
     except ValueError:
-        raise ValueError("Arguments must be integer values.")
+        raise ValueError("Indices must be numeric values")
     
-    # raise an index error if the indices are out of bounds
-    if not validIndex(plotIndex_1, plotIndex_2): raise IndexError("Plot ID out of range.")
+    # validate indices
+    if not validIndex(plotIndex_1, plotIndex_2): raise IndexError("Plot ID out of range")
 
     # swap the two plots
     plots[plotIndex_1], plots[plotIndex_2] = plots[plotIndex_2], plots[plotIndex_1]
@@ -614,25 +610,76 @@ def toggleCommand(userParameters):
     global plots
     # check the number of arguments given
     if userParameters == "":
-        raise SyntaxError("Provide one argument.")
+        raise SyntaxError("Provide ID")
     userParameters = userParameters.split(" ")
 
     # convert the index input to the correct type
     try:
         plotIndex = int(userParameters[0])
     except ValueError:
-        raise ValueError("Argument must be integer value.")
+        raise ValueError("Index must be numeric value")
     
-    # raise an idex error if the index if out of bounds
-    if not validIndex(plotIndex): raise IndexError("Plot ID out of range.")
+    # validate index
+    if not validIndex(plotIndex): raise IndexError("Plot ID out of range")
 
     # set the visibility of the plot to false.
     plots[plotIndex]["VISB"] = not plots[plotIndex]["VISB"]
 
 def backCommand(userParameters):
-    return
+    global plots
+    # check the number of arguments given and assign variables based on this
+    if userParameters == "":
+        raise SyntaxError("Provide ID (and optionally distance)")
+    userParameters = userParameters.split(" ")
+    if len(userParameters) == 1:
+        try:
+            plotIndex = int(userParameters[0])
+            backAmount = 1
+        except ValueError:
+            raise ValueError("Index must be numeric value")
+    else:
+        try:
+            plotIndex = int(userParameters[0])
+            backAmount = int(userParameters[1])
+        except ValueError:
+            raise ValueError("Index and distance must be numeric values")
+        
+    # validate index
+    if not validIndex(plotIndex): raise IndexError("Plot ID out of range")
+    # check if index is last. if it is raise the error anyways, but with a different message
+    if plotIndex == len(plots) - 1: raise IndexError("Plot is already last")
+
+    backIndex = min(len(plots), plotIndex + backAmount + 1)
+    
+    plots = plots[:plotIndex] + plots[plotIndex+1:backIndex] + plots[plotIndex:plotIndex+1] + plots[backIndex:]
+
 def frontCommand(userParameters):
-    return
+    global plots
+    # check the number of arguments given and assign variables based on this
+    if userParameters == "":
+        raise SyntaxError("Provide ID (and optionally distance)")
+    userParameters = userParameters.split(" ")
+    if len(userParameters) == 1:
+        try:
+            plotIndex = int(userParameters[0])
+            frontAmount = 1
+        except ValueError:
+            raise ValueError("Index must be numeric value")
+    else:
+        try:
+            plotIndex = int(userParameters[0])
+            frontAmount = int(userParameters[1])
+        except ValueError:
+            raise ValueError("Index and distance must be numeric values")
+        
+    # validate index
+    if not validIndex(plotIndex): raise IndexError("Plot ID out of range")
+    # check if index is first. if it is raise the error anyways, but with a different message
+    if plotIndex == 0: raise IndexError("Plot is already first")
+    frontIndex = max(0, plotIndex - frontAmount)
+
+    plots = plots[:frontIndex] + plots[plotIndex:plotIndex+1] + plots[frontIndex:plotIndex] + plots[plotIndex+1:]
+
 def removeCommand(userParameters):
     return
 def removeallCommand(userParameters):

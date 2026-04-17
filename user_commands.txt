@@ -35,8 +35,8 @@ toggle [plot-id]
     toggles visibility of plot at plot-id
     can also take the shorthand "tg".
 
-back [plot-id]
-    pushes the plot in plot-id back one spot.
+back [plot-id] [~amount]
+    pushes the plot in plot-id back by amount, if it exists. otherwise by just one.
     can also take the shorthand "bk".
 
 front [plot-id]
