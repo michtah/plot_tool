@@ -246,6 +246,11 @@ def formatNumber(value: int | float) -> str:
     if abs(value) > 1e6 or abs(value) < 1e-2: return "{:.2e}".format(value).replace("+","")
     else: return "{:.2f}".format(value)
 
+# checks the validity of indices compared to the plot list.
+def validIndex(*args):
+    global plots
+    return all(index >= 0 and index < len(plots) for index in args)
+
 # ------------------------------------ #
 # PLOTTING AND RENDERING               #
 # The tools that plot the actual graph #
@@ -544,7 +549,7 @@ def colourCommand(userParameters):
     if len(userParameters) == 1:
         raise SyntaxError("Provide two arguments.")
     
-    # convert the index input to the correct types and assign to variables
+    # convert the inputs to the correct types and assign to variables
     try:
         plotIndex = int(userParameters[0])
         plotColour = userParameters[1]
@@ -552,7 +557,7 @@ def colourCommand(userParameters):
         raise ValueError("First argument must be an integer.")
     
     # raise an index error if the index is out of bounds
-    if plotIndex >= len(plots): raise IndexError("Plot ID out of range.")
+    if not validIndex(plotIndex): raise IndexError("Plot ID out of range.")
     
     # change the colour of the plot with id plotIndex to the colour plotColour
     plots[plotIndex]["COLR"] = validateColour(plotColour)
@@ -567,7 +572,7 @@ def sizeCommand(userParameters):
     if len(userParameters) == 1:
         raise SyntaxError("Provide two arguments.")
     
-    # convert the index input to the correct types and assign to variables
+    # convert the inputs to the correct types and assign to variables
     try:
         plotIndex = int(userParameters[0])
         plotSize = float(userParameters[1])
@@ -575,7 +580,7 @@ def sizeCommand(userParameters):
         raise ValueError("First argument must be an integer, the second must be a numeric value.")
     
     # raise an index error if the index is out of bounds
-    if plotIndex >= len(plots): raise IndexError("Plot ID out of range.")
+    if not validIndex(plotIndex): raise IndexError("Plot ID out of range.")
     
     # change thickness of the plot with id plotIndex to plotSize.
     plots[plotIndex]["SIZE"] = plotSize
@@ -598,15 +603,52 @@ def swapCommand(userParameters):
         raise ValueError("Arguments must be integer values.")
     
     # raise an index error if the indices are out of bounds
-    if plotIndex_1 >= len(plots) or plotIndex_2 >= len(plots): raise IndexError("Plot ID out of range.")
+    if not validIndex(plotIndex_1, plotIndex_2): raise IndexError("Plot ID out of range.")
 
     # swap the two plots
     plots[plotIndex_1], plots[plotIndex_2] = plots[plotIndex_2], plots[plotIndex_1]
 
 def hideCommand(userParameters):
-    return
+    global plots
+    # check the number of arguments given
+    if userParameters == "":
+        raise SyntaxError("Provide one argument.")
+    userParameters = userParameters.split(" ")
+
+    # convert the index input to the correct type
+    try:
+        plotIndex = int(userParameters[0])
+    except ValueError:
+        raise ValueError("Argument must be integer value.")
+    
+    # raise an idex error if the index if out of bounds
+    if not validIndex(plotIndex): raise IndexError("Plot ID out of range.")
+
+    # set the visibility of the plot to false.
+    plots[plotIndex]["VISB"] = False
+
+
 def showCommand(userParameters):
-    return
+    # pretty much the same as the hide command but with the visibility set to true instead.
+    global plots
+    # check the number of arguments given
+    if userParameters == "":
+        raise SyntaxError("Provide one argument.")
+    userParameters = userParameters.split(" ")
+
+    # convert the index input to the correct type
+    try:
+        plotIndex = int(userParameters[0])
+    except ValueError:
+        raise ValueError("Argument must be integer value.")
+    
+    # raise an idex error if the index if out of bounds
+    if not validIndex(plotIndex): raise IndexError("Plot ID out of range.")
+
+    # set the visibility of the plot to false.
+    plots[plotIndex]["VISB"] = True
+
+
 def backCommand(userParameters):
     return
 def frontCommand(userParameters):
@@ -637,7 +679,7 @@ def runUserInput(userInput):
     userCommand = userInput[0]
 
     # list of valid commands
-    validCommands = ["plot", "pl", "move", "mv", "scale", "sc", "colour", "color", "cl", "size", "sz", "swap", "sw", "back", "bk", "front", "fr", "remove", "rm", "removeall", "ra", "resetpos", "rp", "resetscale", "rs", "resetgraph", "rg", "init", "ii", "setres", "sr", "help", "exit", "quit"]
+    validCommands = ["plot", "pl", "move", "mv", "scale", "sc", "colour", "color", "cl", "size", "sz", "swap", "sw", "back", "bk", "front", "fr", "remove", "rm", "removeall", "ra", "resetpos", "rp", "resetscale", "rs", "resetgraph", "rg", "init", "ii", "setres", "sr", "help", "exit", "quit", "hide", "hd", "show", "sh"]
     
     # take the user input for the command. if it doesn't exist (some commands have no inputs after all), give a default blank string instead
     try:
