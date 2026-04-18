@@ -781,6 +781,10 @@ def scaleCommand(userParameters):
     args = parseInput(["scale:f", "scale_x:f scale_y:f"], userParameters)
     if len(args) == 1: scale_x, scale_y = args[0], args[0]
     else: scale_x, scale_y = args
+
+    # check if the scaling is negative or zero. this is not allowed.
+    if scale_x <= 0 or scale_y <= 0:
+        raise ValueError("Scaling must be positive value.")
     
     # the scaling should be around the center, not just the graph bounds, so we need to find the center and also the dimensions
     graphDim_x, graphDim_y = getGraphDimensions()
@@ -796,11 +800,16 @@ def setboundsCommand(userParameters):
     global graphBounds
     args = parseInput(["a:f", "a:f b:f", "a:f b:f c:f d:f"], userParameters)
     if len(args) == 1:
-        graphBounds = {"llx": -args[0], "lly": -args[0], "urx": args[0], "ury": args[0]}
+        newGraphBounds = {"llx": -args[0], "lly": -args[0], "urx": args[0], "ury": args[0]}
     if len(args) == 2:
-        graphBounds = {"llx": -args[0], "lly": -args[1], "urx": args[0], "ury": args[1]}
+        newGraphBounds = {"llx": -args[0], "lly": -args[1], "urx": args[0], "ury": args[1]}
     if len(args) == 4:
-        graphBounds = {"llx": args[0], "lly": args[1], "urx": args[2], "ury": args[3]}
+        newGraphBounds = {"llx": args[0], "lly": args[1], "urx": args[2], "ury": args[3]}
+    
+    if newGraphBounds["llx"] >= newGraphBounds["urx"] or newGraphBounds["lly"] > newGraphBounds["ury"]:
+        raise ValueError("Invalid graph bounds.")
+    else:
+        graphBounds = newGraphBounds
 
 
 def colourCommand(userParameters):
