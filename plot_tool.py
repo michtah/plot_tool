@@ -434,7 +434,7 @@ def getGrowthRate(func):
         testResult = m.inf
     
     # if the function is already infinite, we're safe to assume we're dealing with a >O(n!)/O(gamma(n)) function
-    if m.isinf(testResult): return growthRates[-1]
+    if m.isinf(testResult): return growthRates[-1]["name"]
 
     # otherwise, do this same thing again and again until our test result becomes infinite or until our test value exceeds the cap of 1e200
     while testValue < 1e200:
@@ -460,12 +460,16 @@ def getGrowthRate(func):
 
     # now use a basic looping search to find the first point where it is less than the growth rate it's being compared against
     growthRank = 0
+    biggerFoundFlag = False
     for i in range(len(growthRates)):
         if growthRates[i]["value"] >= testResult:
             growthRank = i
+            biggerFoundFlag = True
             break
     
-    # return the growth rate type
+    # return the growth rate type, if a bigger has been found then it is that, if not then it's surely O(n!)
+    if not biggerFoundFlag:
+        return growthRates[-1]["name"]
     return growthRates[growthRank]["name"]
 
 
