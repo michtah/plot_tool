@@ -111,6 +111,10 @@ window = tk.Tk()
 window.geometry("1500x1000")
 window.title("Plot Tool")
 
+# The canvas and turtle creation was mainly learned from this video:
+# https://www.youtube.com/watch?v=lNplc-e_56w
+# sadly, it appears that this video has since been privated.
+
 # Create the canvas and the screen.
 # The canvas is the physical placement of the screen
 # which is where the turtle actually draws graphics
