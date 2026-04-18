@@ -93,6 +93,7 @@ save / sv
 load / ld
 list / ls
 undo / ud
+bigo / bo
 """
 
 # the history variable stores a list of dictionaries which keep deep copies of the plots and bounds variables
@@ -416,6 +417,11 @@ growthRates = [{"name": growthRateName, "function": growthRateFunction, "value":
 def getGrowthRate(func):
     global growthRates
     # since growth rates test asymptotic behaviour, it makes sense to test ever-higher values until our function reaches infinity
+    try:
+        func(2)
+    except TypeError:
+        return "none"
+    
     testValue = 10
     for growthRate in growthRates:
         try:
@@ -432,7 +438,6 @@ def getGrowthRate(func):
 
     # otherwise, do this same thing again and again until our test result becomes infinite or until our test value exceeds the cap of 1e200
     while testValue < 1e200:
-        print(testValue)
         for growthRate in growthRates:
             try:
                 growthRate["value"] = growthRate["function"](testValue)
@@ -1007,7 +1012,10 @@ def clhistCommand(userParameters):
     history = [history[0]]
 
 def bigoCommand(userParameters):
-    return
+    global helpString
+    functionPlots = [(identity, plot, getGrowthRate(plot["DATA"])) for identity, plot in enumerate(plots) if (plot["TYPE"] in ["FUNCTION1", "FUNCTION2", "FUNCTION3"])]
+
+    helpString = "Growth Rates:\n" + "\n".join(["ID: " + str(identity) + " | " + plot["DISP"] + " | Growth: " + growth for identity, plot, growth in functionPlots])
 
 # parses user input and runs the appropriate command
 def runUserInput(userInput):
@@ -1078,7 +1086,7 @@ def runUserInput(userInput):
     # if the command is a help or list command,
     # manually update the plot information section
     # using the help string that these functions set
-    if userCommand in ["help", "list", "ls"]:
+    if userCommand in ["help", "list", "ls", "bigo", "bo"]:
         displayPlotsCustom(helpString)
 
     # clear entry point
@@ -1086,12 +1094,10 @@ def runUserInput(userInput):
 # bind the enter key to run the user input
 window.bind("<Return>", runUserInput)
 
-
 # ! ---------------------------------------- #
 # ! MAIN LOOP                                #
 # ! Runs the actual program as the main loop #
 # ! ---------------------------------------- #
 
-print(getGrowthRate(lambda x: x**(2.2)))
 drawGraph()
 window.mainloop()

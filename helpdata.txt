@@ -210,6 +210,6 @@ bigo
 $
 bigo
 $
-Shows the estimated growth rate of all the functions.
+Shows the estimated growth rate of all the functions plotted. This is calculated by taking ever larger samples of the function.
 $
 bo
